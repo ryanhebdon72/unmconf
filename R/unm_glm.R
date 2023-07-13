@@ -15,7 +15,7 @@
 #' @param thin `thin` argument of [rjags::coda.samples()]
 #' @param n.chains `n.chains` argument of [rjags::jags.model()]
 #' @param filename File name where to store jags code
-#' @param mod The output of [unm::unm_glm()]
+#' @param mod The output of [unmconf::unm_glm()]
 #' @param quiet The `quiet` parameter of [rjags::jags.model()]. Defaults to
 #'   `TRUE`, but you can change it on a per-session basis with
 #'   `options(unm_quiet = FALSE)`.
@@ -52,8 +52,8 @@
 #'
 #'
 #' # a normal-normal model - external validation
-#' (data_on_response <- runm(c(15, 0), type = "ext"))
-#' (data_on_confounder <- runm(c(0, 5), type = "ext"))
+#' (data_on_response <- runm(c(15, 10), type = "ext"))
+#' (data_on_confounder <- runm(c(10, 5), type = "ext"))
 #' (df <- rbind(data_on_response, data_on_confounder))
 #' (unm_mod <- unm_glm(y ~ trt + x + u1, u1 ~ trt + x, data = df))
 #' unm_backfill(df, unm_mod)
@@ -87,8 +87,8 @@
 #'
 #'
 #' # a normal-normal-normal model - external validation
-#' (data_on_response <- runm(c(15, 0), confounder2 = "norm", type = "ext"))
-#' (data_on_confounder <- runm(c(0, 5), confounder2 = "norm", type = "ext"))
+#' (data_on_response <- runm(c(15, 10), confounder2 = "norm", type = "ext"))
+#' (data_on_confounder <- runm(c(10, 5), confounder2 = "norm", type = "ext"))
 #' (df <- rbind(data_on_response, data_on_confounder))
 #' (unm_mod <- unm_glm(y ~ trt + x + u1 + u2, u1 ~ trt + x + u2,
 #'   u2 ~ trt + x, family3 = gaussian(), data = df))
@@ -294,7 +294,7 @@ unm_glm <- function(
   g <- glue::glue
 
   if (!inherits(family2, "family")) family2 <- list("family" = "none")
-  if (!inherits(family2, "family")) family3 <- list("family" = "none")
+  if (!inherits(family3, "family")) family3 <- list("family" = "none")
 
   y <- deparse(form1[[2]]) # e.g. "y", character name of response var
   u1 <- if(inherits(form2, "formula")) deparse(form2[[2]]) else NULL # e.g. "u1", character name of confounding var
@@ -688,28 +688,70 @@ coef.unm_int <- function(object, ...){
 #' @rdname unm_glm
 unm_backfill <- function(data, mod) {
 
-  # get names
-  confounder1_name <- deparse(attr(mod, "form2")[[2]])
-  confounder2_name <- deparse(attr(mod, "form3")[[2]])
+  if(inherits(attr(mod, "form3"), "formula")) {
+    # get names
+    confounder1_name <- deparse(attr(mod, "form2")[[2]])
+    confounder2_name <- deparse(attr(mod, "form3")[[2]])
 
-  # grab data
-  u1 <- data[[confounder1_name]]
-  u2 <- data[[confounder2_name]]
+    # grab data
+    u1 <- data[[confounder1_name]]
+    u2 <- data[[confounder2_name]]
 
-  # grab fitted things
-  fitted_u1 <- as.numeric(coef(attr(mod, "jm"))[["U"]][, 1])
-  fitted_u2 <- as.numeric(coef(attr(mod, "jm"))[["U"]][, 2])
+    # grab fitted things
+    fitted_u1 <- as.numeric(coef(attr(mod, "jm"))[["U"]][, 1])
+    fitted_u2 <- as.numeric(coef(attr(mod, "jm"))[["U"]][, 2])
 
-  if (length(fitted_u1) > 0) u1 <- apply(cbind(u1, fitted_u1), 1, sum, na.rm = TRUE)
-  if (length(fitted_u2) > 0) u2 <- apply(cbind(u2, fitted_u2), 1, sum, na.rm = TRUE)
+    if (length(fitted_u1) > 0) u1 <- apply(cbind(u1, fitted_u1), 1, sum, na.rm = TRUE)
+    if (length(fitted_u2) > 0) u2 <- apply(cbind(u2, fitted_u2), 1, sum, na.rm = TRUE)
 
-  if (length(fitted_u1) > 0) data[[confounder1_name]] <- u1
-  if (length(fitted_u2) > 0) data[[confounder2_name]] <- u2
+    if (length(fitted_u1) > 0) data[[confounder1_name]] <- u1
+    if (length(fitted_u2) > 0) data[[confounder2_name]] <- u2
 
-  if (length(fitted_u1) > 0) data[[paste0(confounder1_name, "_observed")]] <- is.na(fitted_u1)
-  if (length(fitted_u2) > 0) data[[paste0(confounder2_name, "_observed")]] <- is.na(fitted_u1)
+    if (length(fitted_u1) > 0) data[[paste0(confounder1_name, "_observed")]] <- is.na(fitted_u1)
+    if (length(fitted_u2) > 0) data[[paste0(confounder2_name, "_observed")]] <- is.na(fitted_u1)
 
-  data
+    data
+  }else {
+    # get names
+    confounder1_name <- deparse(attr(mod, "form2")[[2]])
+
+    # grab data
+    u1 <- data[[confounder1_name]]
+
+    # grab fitted things
+    fitted_u1 <- as.numeric(coef(attr(mod, "jm"))[["U"]][, 1])
+
+    if (length(fitted_u1) > 0) u1 <- apply(cbind(u1, fitted_u1), 1, sum, na.rm = TRUE)
+
+    if (length(fitted_u1) > 0) data[[confounder1_name]] <- u1
+
+    if (length(fitted_u1) > 0) data[[paste0(confounder1_name, "_observed")]] <- is.na(fitted_u1)
+
+    data
+  }
+
+  # # get names
+  # confounder1_name <- if(inherits(attr(mod, "form2"), "formula")) deparse(attr(mod, "form2")[[2]]) else NULL # e.g. "u1", character name of confounding var
+  # confounder2_name <- if(inherits(attr(mod, "form3"), "formula")) deparse(attr(mod, "form3")[[2]]) else NULL # e.g. "u2", character name of confounding var
+  #
+  # # grab data
+  # u1 <- data[[confounder1_name]]
+  # u2 <- data[[confounder2_name]]
+  #
+  # # grab fitted things
+  # fitted_u1 <- as.numeric(coef(attr(mod, "jm"))[["U"]][, 1])
+  # fitted_u2 <- as.numeric(coef(attr(mod, "jm"))[["U"]][, 2])
+  #
+  # if (length(fitted_u1) > 0) u1 <- apply(cbind(u1, fitted_u1), 1, sum, na.rm = TRUE)
+  # if (length(fitted_u2) > 0) u2 <- apply(cbind(u2, fitted_u2), 1, sum, na.rm = TRUE)
+  #
+  # if (length(fitted_u1) > 0) data[[confounder1_name]] <- u1
+  # if (length(fitted_u2) > 0) data[[confounder2_name]] <- u2
+  #
+  # if (length(fitted_u1) > 0) data[[paste0(confounder1_name, "_observed")]] <- is.na(fitted_u1)
+  # if (length(fitted_u2) > 0) data[[paste0(confounder2_name, "_observed")]] <- is.na(fitted_u1)
+  #
+  # data
 }
 
 
