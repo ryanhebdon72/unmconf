@@ -76,7 +76,7 @@ runm <- function(n, response = "norm",
 runm_full <- function(n, response = "norm",
                       confounder1 = "norm", confounder2 = NA, treatment = TRUE) {
 
-  df <- data.frame("x" = rnorm(n))
+  df <- data.frame("z" = rnorm(n))
 
   rconf1 <- switch(confounder1,
                    "norm" = function(n) rnorm(n, 1, 1),
@@ -97,13 +97,13 @@ runm_full <- function(n, response = "norm",
     if(is.na(confounder2)) {ga <- c("ga_1" = -1, "ga_x" = .4, "ga_u1" = .75)
     } else ga <- c("ga_1" = -1, "ga_x" = .4, "ga_u1" = .75, "ga_u2" = .75)
     p_ga <- length(ga) # = # non-confounder params in treatment model
-    df$trt <- rbinom(n, 1, binomial()$linkinv(W %*% ga))
-  } else df$trt <- 0 # For the case of external validation data
+    df$x <- rbinom(n, 1, binomial()$linkinv(W %*% ga))
+  } else df$x <- 0 # For the case of external validation data
 
   #make response
   X <- model.matrix(~ ., data = df)
   be1 <- c("be_1" = -1, "be_x" = .75)
-  be2 <- c("be_trt" = .75)
+  be2 <- c("be_x" = .75)
   p_be <- length(be1) + length(be2) # = # non-confounder params in response model
   if(is.na(confounder2)) {la <- c("la_u1" = .75)
   } else la <- c("la_u1" = .75, "la_u2" = .75)
@@ -190,7 +190,7 @@ runm_ext <- function(n_main, n_external, response, confounder1, confounder2) {
 runm_full <- function(n, response = "norm",
                       confounder1 = "norm", confounder2 = NA, treatment = TRUE) {
 
-  df <- data.frame("x" = rnorm(n))
+  df <- data.frame("z" = rnorm(n))
 
   rconf1 <- switch(confounder1,
                    "norm" = function(n) rnorm(n, 1, 1),
@@ -208,16 +208,16 @@ runm_full <- function(n, response = "norm",
   #make treatment
   if(treatment == TRUE) {
     W <- model.matrix(~ ., data = df)
-    if(is.na(confounder2)) {ga <- c("ga_1" = -1, "ga_x" = .4, "ga_u1" = .75)
-    } else ga <- c("ga_1" = -1, "ga_x" = .4, "ga_u1" = .75, "ga_u2" = .75)
+    if(is.na(confounder2)) {ga <- c("ga_1" = -1, "ga_z" = .4, "ga_u1" = .75)
+    } else ga <- c("ga_1" = -1, "ga_z" = .4, "ga_u1" = .75, "ga_u2" = .75)
     p_ga <- length(ga) # = # non-confounder params in treatment model
-    df$trt <- rbinom(n, 1, binomial()$linkinv(W %*% ga))
-  } else df$trt <- 0 # For the case of external validation data
+    df$x <- rbinom(n, 1, binomial()$linkinv(W %*% ga))
+  } else df$x <- 0 # For the case of external validation data
 
   #make response
   X <- model.matrix(~ ., data = df)
-  be1 <- c("be_1" = -1, "be_x" = .75)
-  be2 <- c("be_trt" = .75)
+  be1 <- c("be_1" = -1, "be_z" = .75)
+  be2 <- c("be_x" = .75)
   p_be <- length(be1) + length(be2) # = # non-confounder params in response model
   if(is.na(confounder2)) {la <- c("la_u1" = .75)
   } else la <- c("la_u1" = .75, "la_u2" = .75)
@@ -359,11 +359,11 @@ runm_full_extended <- function(n,
 
   df_combined <- cbind(covariate_df, unm_conf_df)
 
-  trt_param_vec <- treatment_model_coefs # c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4, "u1" = .75, "u2" = .75)
-  (length(trt_param_vec) - 1) == ncol(df_combined)
-  names(df_combined) == names(trt_param_vec)[-1]
-  vec_names <- names(trt_param_vec)
-  names(trt_param_vec) <- sapply(vec_names, function(.) {
+  x_param_vec <- treatment_model_coefs # c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4, "u1" = .75, "u2" = .75)
+  (length(x_param_vec) - 1) == ncol(df_combined)
+  names(df_combined) == names(x_param_vec)[-1]
+  vec_names <- names(x_param_vec)
+  names(x_param_vec) <- sapply(vec_names, function(.) {
     if(grepl("z|nt", .)) {
       glue::glue("ga_{.}")
     } else glue::glue("ze_{.}")
@@ -371,10 +371,10 @@ runm_full_extended <- function(n,
   #make treatment
   if(treatment == TRUE) {
     W <- model.matrix(~ ., data = df_combined)
-    ga <- trt_param_vec
+    ga <- x_param_vec
     p_ga <- length(ga) # = # non-confounder params in treatment model
-    df_combined$trt <- rbinom(n, 1, binomial()$linkinv(W %*% ga))
-  } else df_combined$trt <- 0 # For the case of external validation data
+    df_combined$x <- rbinom(n, 1, binomial()$linkinv(W %*% ga))
+  } else df_combined$x <- 0 # For the case of external validation data
 
   #make response
   X <- model.matrix(~ ., data = df_combined)
@@ -383,13 +383,13 @@ runm_full_extended <- function(n,
   names(df_combined) == names(response_model_coefs)[-1]
   vec_names <- names(response_model_coefs)
   names(response_model_coefs) <- sapply(vec_names, function(.) {
-    if(grepl("z|nt|trt", .)) {
+    if(grepl("z|nt|x", .)) {
       glue::glue("be_{.}")
     } else glue::glue("la_{.}")
   })
-  be <- response_model_coefs # c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4, "u1" = .75, "u2" = .75, "trt" = .75)
+  be <- response_model_coefs # c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4, "u1" = .75, "u2" = .75, "x" = .75)
 
-  # c("be_1" = -1, "be_x" = .75, "la_u1" = .75, "la_u2" = .75, "be_trt" = .75)
+  # c("be_1" = -1, "be_z" = .75, "la_u1" = .75, "la_u2" = .75, "be_x" = .75)
   p_be <- length(be) # = # non-confounder params in response model
   # p_la <- length(la) # = # confounder params in response model
   (th <- be)

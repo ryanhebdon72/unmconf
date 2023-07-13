@@ -40,14 +40,14 @@
 #' # ~~ One Unmeasured Confounder Examples (II-Stage Model) ~~
 #' # normal response, normal confounder model with internally validated data
 #' (df <- runm(20, response = "norm", confounder1 = "norm"))
-#' (unm_mod <- unm_glm(y ~ trt + x + u1, u1 ~ trt + x, data = df))
-#' glm(y ~ trt + x, data = df)
+#' (unm_mod <- unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df))
+#' glm(y ~ x + z, data = df)
 #' coef(unm_mod)
 #' unm_summary(unm_mod)
 #' unm_summary(unm_mod, df) # true values known
 #' df
 #' unm_backfill(df, unm_mod)
-#' unm_glm(y ~ trt + x + u1, u1 ~ trt + x, data = df, code_only = TRUE)
+#' unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df, code_only = TRUE)
 #'
 #'
 #'
@@ -55,14 +55,14 @@
 #' (data_on_response <- runm(c(15, 10), type = "ext"))
 #' (data_on_confounder <- runm(c(10, 5), type = "ext"))
 #' (df <- rbind(data_on_response, data_on_confounder))
-#' (unm_mod <- unm_glm(y ~ trt + x + u1, u1 ~ trt + x, data = df))
+#' (unm_mod <- unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df))
 #' unm_backfill(df, unm_mod)
 #'
 #'
 #'
 #' # setting custom priors
-#' unm_glm(y ~ trt + x + u1, u1 ~ trt + x, data = df, code_only = TRUE)
-#' unm_glm(y ~ trt + x + u1, u1 ~ trt + x, data = df, code_only = FALSE,
+#' unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df, code_only = TRUE)
+#' unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df, code_only = FALSE,
 #'   priors = c("lambda[u1]" = "dnorm(1, 10)"),
 #'   response_nuissance_priors = "tau_{y} <- sigma_{y}^-2; sigma_{y} ~ dunif(0, 100)",
 #'   response_params_to_track = "sigma_{y}",
@@ -73,16 +73,16 @@
 #' # ~~ Two Unmeasured Confounders Examples (III-Stage Model) ~~
 #' # a normal-normal-normal model - internal validation
 #' (df <- runm(20, response = "norm", confounder1 = "norm", confounder2 = "norm"))
-#' (unm_mod <- unm_glm(y ~ trt + x + u1 + u2, u1 ~ trt + x + u2,
-#'   u2 ~ trt + x, family3 = gaussian(), data = df))
-#' glm(y ~ trt + x, data = df)
+#' (unm_mod <- unm_glm(y ~ x + z + u1 + u2, u1 ~ x + z + u2,
+#'   u2 ~ x + z, family3 = gaussian(), data = df))
+#' glm(y ~ x + z, data = df)
 #' coef(unm_mod)
 #' unm_summary(unm_mod)
 #' unm_summary(unm_mod, df) # true values known
 #' df
 #' unm_backfill(df, unm_mod)
-#' unm_glm(y ~ trt + x + u1 + u2, u1 ~ trt + x + u2,
-#'   u2 ~ trt + x, family3 = gaussian(), data = df, code_only = TRUE)
+#' unm_glm(y ~ x + z + u1 + u2, u1 ~ x + z + u2,
+#'   u2 ~ x + z, family3 = gaussian(), data = df, code_only = TRUE)
 #'
 #'
 #'
@@ -90,18 +90,18 @@
 #' (data_on_response <- runm(c(15, 10), confounder2 = "norm", type = "ext"))
 #' (data_on_confounder <- runm(c(10, 5), confounder2 = "norm", type = "ext"))
 #' (df <- rbind(data_on_response, data_on_confounder))
-#' (unm_mod <- unm_glm(y ~ trt + x + u1 + u2, u1 ~ trt + x + u2,
-#'   u2 ~ trt + x, family3 = gaussian(), data = df))
+#' (unm_mod <- unm_glm(y ~ x + z + u1 + u2, u1 ~ x + z + u2,
+#'   u2 ~ x + z, family3 = gaussian(), data = df))
 #' unm_backfill(df, unm_mod)
 #'
 #'
 #'
 #' # a binomial-binomial-binomial model - setting custom priors
-#' unm_glm(y ~ trt + x + u1 + u2, family1 = binomial(),
-#'   u1 ~ trt + x + u2, family2 = binomial(),
-#'   u2 ~ trt + x, family3 = binomial(),
+#' unm_glm(y ~ x + z + u1 + u2, family1 = binomial(),
+#'   u1 ~ x + z + u2, family2 = binomial(),
+#'   u2 ~ x + z, family3 = binomial(),
 #'   data = df, code_only = TRUE)
-#' unm_glm(y ~ trt + x + u1, u1 ~ trt + x, data = df, code_only = FALSE,
+#' unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df, code_only = FALSE,
 #'   priors = c("lambda[u1]" = "dnorm(1, 10)"),
 #'   response_nuissance_priors = "tau_{y} <- sigma_{y}^-2; sigma_{y} ~ dunif(0, 100)",
 #'   response_params_to_track = "sigma_{y}",
@@ -118,27 +118,27 @@
 #'
 #' # more complex functional forms _for non-confounder predictors only_
 #' # zero-intercept model
-#' unm_glm(y ~ trt + x + u1 - 1, u1 ~ trt + x, data = df)
-#' glm(y ~ trt + x - 1, data = df)
+#' unm_glm(y ~ x + z + u1 - 1, u1 ~ x + z, data = df)
+#' glm(y ~ x + z - 1, data = df)
 #'
 #' # polynomial model
-#' unm_glm(y ~ trt + poly(x, 2) + u1, u1 ~ trt + x, data = df)
-#' glm(y ~ trt + poly(x, 2), data = df)
+#' unm_glm(y ~ x + poly(x, 2) + u1, u1 ~ x + z, data = df)
+#' glm(y ~ x + poly(x, 2), data = df)
 #'
 #' # interaction model
-#' unm_glm(y ~ trt*x + u1, u1 ~ trt*x, data = df)
-#' glm(y ~ trt*x, data = df)
+#' unm_glm(y ~ x*z + u1, u1 ~ x*z, data = df)
+#' glm(y ~ x*z, data = df)
 #'
 #'
 #'
 #' # a binomial-binomial model
 #' df <- runm(100, response = "bin", confounder1 = "bin")
 #' (unm_mod <- unm_glm(
-#'   y ~ trt + x + u1, family1 = binomial(),
-#'   u1 ~ trt + x, family2 = binomial(),
+#'   y ~ x + z + u1, family1 = binomial(),
+#'   u1 ~ x + z, family2 = binomial(),
 #'   data = df
 #' ))
-#' glm(y ~ trt + x, family = binomial(), data = df)
+#' glm(y ~ x + z, family = binomial(), data = df)
 #' unm_backfill(df, unm_mod)
 #' unm_summary(unm_mod, df)
 #'
@@ -147,11 +147,11 @@
 #' # a poisson-normal model
 #' df <- runm(100, response = "pois", confounder1 = "norm")
 #' (unm_mod <- unm_glm(
-#'   y ~ trt + x + u1 + offset(log(t)), family1 = poisson(),
-#'   u1 ~ trt + x,
+#'   y ~ x + z + u1 + offset(log(t)), family1 = poisson(),
+#'   u1 ~ x + z,
 #'   data = df
 #' ))
-#' glm(y ~ trt + x + offset(log(t)), family = poisson(), data = df)
+#' glm(y ~ x + z + offset(log(t)), family = poisson(), data = df)
 #' unm_summary(unm_mod, df)
 #'
 #'
@@ -159,11 +159,11 @@
 #' # a poisson-binomial model
 #' df <- runm(100, response = "pois", confounder1 = "bin")
 #' (unm_mod <- unm_glm(
-#'   y ~ trt + x + u1 + offset(log(t)), family1 = poisson(),
-#'   u1 ~ trt + x,                      family2 = binomial(),
+#'   y ~ x + z + u1 + offset(log(t)), family1 = poisson(),
+#'   u1 ~ x + z,                      family2 = binomial(),
 #'   data = df
 #' ))
-#' glm(y ~ trt + x + offset(log(t)), family = poisson(), data = df)
+#' glm(y ~ x + z + offset(log(t)), family = poisson(), data = df)
 #' unm_summary(unm_mod, df)
 #'
 #'
@@ -171,11 +171,11 @@
 #' # a gamma-normal model
 #' df <- runm(100, response = "gam", confounder1 = "norm")
 #' (unm_mod <- unm_glm(
-#'   y ~ trt + x + u1, family1 = Gamma(link = "log"),
-#'   u1 ~ trt + x,
+#'   y ~ x + z + u1, family1 = Gamma(link = "log"),
+#'   u1 ~ x + z,
 #'   data = df
 #' ))
-#' glm(y ~ trt + x, family = Gamma(link = "log"), data = df)
+#' glm(y ~ x + z, family = Gamma(link = "log"), data = df)
 #' unm_summary(unm_mod, df)
 #'
 #'
@@ -183,11 +183,11 @@
 #' # a gamma-binomial model
 #' df <- runm(50, response = "gam", confounder1 = "bin")
 #' (unm_mod <- unm_glm(
-#'   y ~ trt + x + u1, family1 = Gamma(link = "log"),
-#'   u1 ~ trt + x, family2 = binomial(),
+#'   y ~ x + z + u1, family1 = Gamma(link = "log"),
+#'   u1 ~ x + z, family2 = binomial(),
 #'   data = df
 #' ))
-#' glm(y ~ trt + x, family = Gamma(link = "log"), data = df)
+#' glm(y ~ x + z, family = Gamma(link = "log"), data = df)
 #' unm_summary(unm_mod, df)
 #' print(df, n = 50)
 #' print(unm_backfill(df, unm_mod), n = 50)
@@ -196,10 +196,10 @@
 #'
 #' # the output of unm_glm() is classed jags output
 #' (df <- runm(20, response = "norm", confounder1 = "norm"))
-#' (unm_mod <- unm_glm(y ~ trt + x + u1, u1 ~ trt + x, data = df))
+#' (unm_mod <- unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df))
 #' class(unm_mod)
 #' jags_code(unm_mod)
-#' unm_glm(y ~ trt + x + u1, u1 ~ trt + x, data = df, code_only = TRUE)
+#' unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df, code_only = TRUE)
 #'
 #'
 #'
@@ -262,7 +262,7 @@
 #' df$ht <- df$y
 #' df$age <- df$u1
 #' df$biom <- df$x
-#' (unm_mod <- unm_glm(ht ~ trt + biom + age, age ~ trt + biom, data = df))
+#' (unm_mod <- unm_glm(ht ~ x + biom + age, age ~ x + biom, data = df))
 #' jags_code(unm_mod)
 #'
 
@@ -441,7 +441,7 @@ unm_glm <- function(
   p_ze <- ncol(U2) # = # confounder params in unmeasured1 model
   p_de <- ncol(V)  # = # non-confounder params in unmeasured2 model
 
-  # make conversion from, e.g., beta[2] to beta[trt]
+  # make conversion from, e.g., beta[2] to beta[x]
   X_vars <- colnames(X) # corresponds to beta
   U_vars <- colnames(U) # corresponds to lambda
   W_vars <- colnames(W) # corresponds to gamma
@@ -466,13 +466,13 @@ unm_glm <- function(
                    g("delta[{V_vars}]"), g("zeta[{U2_vars}]") )
   real_coefs <- gsub("\\(Intercept\\)", "1", real_coefs)
 
-  # make function to convert coefficient names, e.g. gamma[trt] -> gamma[2]
+  # make function to convert coefficient names, e.g. gamma[x] -> gamma[2]
   real_to_jags_coefs <- function(x) {
     dict <- structure(jags_coefs, names = real_coefs)
     x[x %in% real_coefs] <- unname(dict[x])[x %in% real_coefs]
     x
   }
-  # real_to_jags_coefs(c("beta[1]", "gamma[trt]", "a", "lambda[u]"))
+  # real_to_jags_coefs(c("beta[1]", "gamma[x]", "a", "lambda[u]"))
   # [1] "beta[1]" "gamma[2]" "a" "lambda[1]"
 
   jags_to_real_coefs <- function(x) {
@@ -481,7 +481,7 @@ unm_glm <- function(
     x
   }
   # jags_to_real_coefs(c("beta[1]", "gamma[2]", "a", "lambda[1]"))
-  # [1] "beta[1]" "gamma[trt]" "a" "lambda[u]"
+  # [1] "beta[1]" "gamma[x]" "a" "lambda[u]"
 
   jags_priors <- rep(default_prior, length(jags_coefs))
   names(jags_priors) <- jags_coefs
