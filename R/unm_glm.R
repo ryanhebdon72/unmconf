@@ -122,8 +122,8 @@
 #' glm(y ~ x + z - 1, data = df)
 #'
 #' # polynomial model
-#' unm_glm(y ~ x + poly(x, 2) + u1, u1 ~ x + z, data = df)
-#' glm(y ~ x + poly(x, 2), data = df)
+#' unm_glm(y ~ x + poly(z, 2) + u1, u1 ~ x + z, data = df)
+#' glm(y ~ x + poly(z, 2), data = df)
 #'
 #' # interaction model
 #' unm_glm(y ~ x*z + u1, u1 ~ x*z, data = df)
