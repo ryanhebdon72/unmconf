@@ -276,7 +276,7 @@
 
 unm_glm <- function(
     form1, form2 = NA, form3 = NA,
-    family1 = gaussian(), family2 = NA, family3 = NA,
+    family1 = gaussian(), family2 = gaussian(), family3 = NA,
     data,
     n.iter = 2000, n.adapt = 1000, thin = 10, n.chains = 4,
     filename = tempfile(fileext = ".jags"),
@@ -293,8 +293,8 @@ unm_glm <- function(
 
   g <- glue::glue
 
-  if (class(family2) != "family") family2 <- list("family" = "none")
-  if (class(family3) != "family") family3 <- list("family" = "none")
+  if (!inherits(family2, "family")) family2 <- list("family" = "none")
+  if (!inherits(family2, "family")) family3 <- list("family" = "none")
 
   y <- deparse(form1[[2]]) # e.g. "y", character name of response var
   u1 <- if(inherits(form2, "formula")) deparse(form2[[2]]) else NULL # e.g. "u1", character name of confounding var
