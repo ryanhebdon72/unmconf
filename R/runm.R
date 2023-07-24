@@ -79,13 +79,13 @@ runm_full <- function(n, response = "norm",
   df <- data.frame("z" = rnorm(n))
 
   rconf1 <- switch(confounder1,
-                   "norm" = function(n) rnorm(n, 1, 1),
-                   "bin" = function(n) rbinom(n, 1, .7)
+                   "norm" = function(n) rnorm(n, 0, 1),
+                   "bin" = function(n) rbinom(n, 1, .5)
   )
 
   rconf2 <- switch(confounder2,
-                   "norm" = function(n) rnorm(n, 1, 1),
-                   "bin" = function(n) rbinom(n, 1, .7)
+                   "norm" = function(n) rnorm(n, 0, 1),
+                   "bin" = function(n) rbinom(n, 1, .5)
   )
   #make confounders
   df$u1 <- rconf1(n)
@@ -94,8 +94,8 @@ runm_full <- function(n, response = "norm",
   #make treatment
   if(treatment == TRUE) {
     W <- model.matrix(~ ., data = df)
-    if(is.na(confounder2)) {ga <- c("ga_1" = -1, "ga_x" = .4, "ga_u1" = .75)
-    } else ga <- c("ga_1" = -1, "ga_x" = .4, "ga_u1" = .75, "ga_u2" = .75)
+    if(is.na(confounder2)) {ga <- c("ga_1" = -1, "ga_x" = .5, "ga_u1" = .75)
+    } else ga <- c("ga_1" = -1, "ga_x" = .5, "ga_u1" = .75, "ga_u2" = .75)
     p_ga <- length(ga) # = # non-confounder params in treatment model
     df$x <- rbinom(n, 1, binomial()$linkinv(W %*% ga))
   } else df$x <- 0 # For the case of external validation data
