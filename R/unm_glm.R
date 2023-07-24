@@ -276,7 +276,7 @@
 
 unm_glm <- function(
     form1, form2 = NA, form3 = NA,
-    family1 = gaussian(), family2 = gaussian(), family3 = NA,
+    family1 = gaussian(), family2 = NA, family3 = NA,
     data,
     n.iter = 2000, n.adapt = 1000, thin = 10, n.chains = 4,
     filename = tempfile(fileext = ".jags"),
