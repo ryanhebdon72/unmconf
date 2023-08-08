@@ -4,22 +4,18 @@
 #' unmeasured confounders (can take up to two unmeasured confounders). Defaults to
 #' one unmeasured confounder.
 #'
+#'
 #' @param n Number of observations
 #' @param response `"norm"`, `"bin"`, `"pois"`, or `"gam"`
 #' @param confounder1 `"norm"` or `"bin"`
 #' @param confounder2 `"norm"` or `"bin"`
-#' @param type `"int"` or `"ext"` (not implemented)
+#' @param type `"int"` or `"ext"`
 #' @param missing_prop Proportion of missing values. Only used when `type = "int"`
 #' @return A `tibble`
 #' @export
 #' @name runm
-#' @details
-#'   \deqn{
-#'   x  \sim \text{Ber}(\text{logit}(\gamma_0 + \gamma_z z + \zeta_{u_1} u_1 + \zeta_{u_2} u_2))\\
-#'   y  \sim N(\beta_0 + \beta_{x} x + \beta_z z + \lambda_{u_1} u_1 + \lambda_{u_2} u_2, \sigma^2_y = 1),}
 #'
-#'   Where \eqn{(\beta_0 = -1, \beta_x = 0.75, \beta_z = 0.75, \lambda_{u_1} = 0.75, \lambda_{u_2} = 0.75,
-#'    \gamma_0 = -1, \gamma_{z} = .4, \zeta_{u_1} = 0.75, \zeta_{u_2} = 0.75).}
+#'
 #'
 #' @examples
 #'
@@ -43,7 +39,6 @@
 #' runm(c(15,5), type = "ext")
 #' runm(c(15,5), response = "norm", confounder1 = "norm", type = "ext")
 #' runm(c(15,5), response = "norm", confounder1 = "bin", confounder2 = "norm", type = "ext")
-
 
 runm <- function(n, response = "norm",
                  confounder1 = "norm", confounder2 = NA,
@@ -258,6 +253,52 @@ runm_full <- function(n, response = "norm",
   # return
   df
 }
+
+#' An expanded way to generate synthetic data
+#'
+#' [runm_extended()] enables more customized data generation process for user.
+#' Currently set up to have at most 2 unmeasured confounders to pair with `unm_glm()`.
+#'
+#' @param n Number of observations
+#' @param response `"norm"`, `"bin"`, `"pois"`, or `"gam"`
+#' @param response_param Nuisance priors for response type
+#' @param covariate_fam_list A list of either `"norm"` or `"bin"`, where the length
+#'  of the list matches the number of covariates in the model.
+#' @param covariate_param_list A list of parameters for the respective distributions
+#'  in `covariate_fam_list`, where the length of the list matches the length of
+#'  `covariate_fam_list`.
+#' @param unmeasured_fam_list A list of either `"norm"` or `"bin"`, where the length
+#'  of the list matches the number of unmeasured confounders in the model. This can
+#'  be at most a length of 2 to pair with [unmconf::unm_glm()].
+#' @param unmeasured_param_list A list of parameters for the respective distributions
+#'  in `unmeasured_fam_list`, where the length of the list matches the length of
+#'  `unmeasured_fam_list`.
+#' @param response_model_coefs A named vector of coefficients to generate data from
+#' the response model. This must include an intercept (`"int" =`), a coefficient
+#' for each covariate specified, a coefficient for each unmeasured confounder,
+#' and a treatment coefficient (`"x" = `).
+#' @param treatment_model_coefs A named vector of coefficients to generate data from
+#' the treatment model. This must include an intercept (`"int" =`), a coefficient
+#' for each covariate specified, and a coefficient for each unmeasured confounder.
+#' @param type `"int"` or `"ext"`
+#' @param missing_prop Proportion of missing values. Only used when `type = "int"`
+#'
+#' @export
+#' @name runm_extended
+#'
+#' @examples
+#' runm_extended(n = 100,
+#'               response = "norm",
+#'               response_param = c("si_y" = 1),
+#'               covariate_fam_list = list("norm", "bin", "norm"),
+#'               covariate_param_list = list(c(mean = 0, sd = 1), c(.3), c(0, 2)),
+#'               unmeasured_fam_list = list("norm", "bin"),
+#'               unmeasured_param_list = list(c(mean = 0, sd = 1), c(.3)),
+#'               response_model_coefs = c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
+#'                                        "u1" = .75, "u2" = .75, "x" = .75),
+#'               treatment_model_coefs = c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
+#'                                         "u1" = .75, "u2" = .75),
+#'               type = "int", missing_prop = .80)
 
 
 runm_extended <- function(n,

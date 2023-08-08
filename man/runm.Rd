@@ -22,7 +22,7 @@ runm(
 
 \item{confounder2}{\code{"norm"} or \code{"bin"}}
 
-\item{type}{\code{"int"} or \code{"ext"} (not implemented)}
+\item{type}{\code{"int"} or \code{"ext"}}
 
 \item{missing_prop}{Proportion of missing values. Only used when \code{type = "int"}}
 }
@@ -33,14 +33,6 @@ A \code{tibble}
 \code{\link[=runm]{runm()}} generates synthetic data for use in examples of models with
 unmeasured confounders (can take up to two unmeasured confounders). Defaults to
 one unmeasured confounder.
-}
-\details{
-\deqn{
-  x  \sim \text{Ber}(\text{logit}(\gamma_0 + \gamma_z z + \zeta_{u_1} u_1 + \zeta_{u_2} u_2))\\
-  y  \sim N(\beta_0 + \beta_{x} x + \beta_z z + \lambda_{u_1} u_1 + \lambda_{u_2} u_2, \sigma^2_y = 1),}
-
-Where \eqn{(\beta_0 = -1, \beta_x = 0.75, \beta_z = 0.75, \lambda_{u_1} = 0.75, \lambda_{u_2} = 0.75,
-   \gamma_0 = -1, \gamma_{z} = .4, \zeta_{u_1} = 0.75, \zeta_{u_2} = 0.75).}
 }
 \examples{
 

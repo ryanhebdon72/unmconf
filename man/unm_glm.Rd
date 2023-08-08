@@ -14,7 +14,7 @@ unm_glm(
   form2 = NA,
   form3 = NA,
   family1 = gaussian(),
-  family2 = gaussian(),
+  family2 = NA,
   family3 = NA,
   data,
   n.iter = 2000,
@@ -27,11 +27,11 @@ unm_glm(
   code_only = FALSE,
   default_prior = "dnorm(0, .1)",
   priors,
-  response_nuissance_priors,
+  response_nuisance_priors,
   response_params_to_track,
-  confounder1_nuissance_priors,
+  confounder1_nuisance_priors,
   confounder1_params_to_track,
-  confounder2_nuissance_priors,
+  confounder2_nuisance_priors,
   confounder2_params_to_track,
   ...
 )
@@ -84,9 +84,9 @@ Defaults to \code{"none"}, but you can change it on a per-session basis with
 
 \item{priors}{Custom priors to use on regression coefficients, see examples.}
 
-\item{response_nuissance_priors, confounder1_nuissance_priors, confounder2_nuissance_priors}{JAGS code for the nuissance priors on parameters in a JAGS model (see examples)}
+\item{response_nuisance_priors, confounder1_nuisance_priors, confounder2_nuisance_priors}{JAGS code for the nuisance priors on parameters in a JAGS model (see examples)}
 
-\item{response_params_to_track, confounder1_params_to_track, confounder2_params_to_track}{Additional parameters to track when nuissance parameter priors are used (see examples)}
+\item{response_params_to_track, confounder1_params_to_track, confounder2_params_to_track}{Additional parameters to track when nuisance parameter priors are used (see examples)}
 
 \item{...}{Additional arguments to pass into \code{\link[rjags:jags.model]{rjags::jags.model()}}, such as \code{inits}}
 
@@ -114,14 +114,14 @@ Modeling with Unmeasured Confounders
 # ~~ One Unmeasured Confounder Examples (II-Stage Model) ~~
 # normal response, normal confounder model with internally validated data
 (df <- runm(20, response = "norm", confounder1 = "norm"))
-(unm_mod <- unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df))
+(unm_mod <- unm_glm(y ~ x + z + u1, u1 ~ x + z, family2 = gaussian(), data = df))
 glm(y ~ x + z, data = df)
 coef(unm_mod)
 unm_summary(unm_mod)
 unm_summary(unm_mod, df) # true values known
 df
 unm_backfill(df, unm_mod)
-unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df, code_only = TRUE)
+unm_glm(y ~ x + z + u1, u1 ~ x + z, family2 = gaussian(), data = df, code_only = TRUE)
 
 
 
@@ -129,57 +129,18 @@ unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df, code_only = TRUE)
 (data_on_response <- runm(c(15, 10), type = "ext"))
 (data_on_confounder <- runm(c(10, 5), type = "ext"))
 (df <- rbind(data_on_response, data_on_confounder))
-(unm_mod <- unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df))
+(unm_mod <- unm_glm(y ~ x + z + u1, u1 ~ x + z, family2 = gaussian(), data = df))
 unm_backfill(df, unm_mod)
 
 
 
 # setting custom priors
-unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df, code_only = TRUE)
-unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df, code_only = FALSE,
+unm_glm(y ~ x + z + u1, u1 ~ x + z, family2 = gaussian(), data = df, code_only = TRUE)
+unm_glm(y ~ x + z + u1, u1 ~ x + z, family2 = gaussian(), data = df, code_only = FALSE,
   priors = c("lambda[u1]" = "dnorm(1, 10)"),
-  response_nuissance_priors = "tau_{y} <- sigma_{y}^-2; sigma_{y} ~ dunif(0, 100)",
+  response_nuisance_priors = "tau_{y} <- sigma_{y}^-2; sigma_{y} ~ dunif(0, 100)",
   response_params_to_track = "sigma_{y}",
-  confounder1_nuissance_priors = "tau_{u1} <- sigma_{u1}^-2; sigma_{u1} ~ dunif(0, 100)",
-  confounder1_params_to_track = "sigma_{u1}"
-)
-
-# ~~ Two Unmeasured Confounders Examples (III-Stage Model) ~~
-# a normal-normal-normal model - internal validation
-(df <- runm(20, response = "norm", confounder1 = "norm", confounder2 = "norm"))
-(unm_mod <- unm_glm(y ~ x + z + u1 + u2, u1 ~ x + z + u2,
-  u2 ~ x + z, family3 = gaussian(), data = df))
-glm(y ~ x + z, data = df)
-coef(unm_mod)
-unm_summary(unm_mod)
-unm_summary(unm_mod, df) # true values known
-df
-unm_backfill(df, unm_mod)
-unm_glm(y ~ x + z + u1 + u2, u1 ~ x + z + u2,
-  u2 ~ x + z, family3 = gaussian(), data = df, code_only = TRUE)
-
-
-
-# a normal-normal-normal model - external validation
-(data_on_response <- runm(c(15, 10), confounder2 = "norm", type = "ext"))
-(data_on_confounder <- runm(c(10, 5), confounder2 = "norm", type = "ext"))
-(df <- rbind(data_on_response, data_on_confounder))
-(unm_mod <- unm_glm(y ~ x + z + u1 + u2, u1 ~ x + z + u2,
-  u2 ~ x + z, family3 = gaussian(), data = df))
-unm_backfill(df, unm_mod)
-
-
-
-# a binomial-binomial-binomial model - setting custom priors
-unm_glm(y ~ x + z + u1 + u2, family1 = binomial(),
-  u1 ~ x + z + u2, family2 = binomial(),
-  u2 ~ x + z, family3 = binomial(),
-  data = df, code_only = TRUE)
-unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df, code_only = FALSE,
-  priors = c("lambda[u1]" = "dnorm(1, 10)"),
-  response_nuissance_priors = "tau_{y} <- sigma_{y}^-2; sigma_{y} ~ dunif(0, 100)",
-  response_params_to_track = "sigma_{y}",
-  confounder1_nuissance_priors = "tau_{u1} <- sigma_{u1}^-2; sigma_{u1} ~ dunif(0, 100)",
+  confounder1_nuisance_priors = "tau_{u1} <- sigma_{u1}^-2; sigma_{u1} ~ dunif(0, 100)",
   confounder1_params_to_track = "sigma_{u1}"
 )
 
@@ -192,15 +153,15 @@ options("unm_progress.bar" = "text")
 
 # more complex functional forms _for non-confounder predictors only_
 # zero-intercept model
-unm_glm(y ~ x + z + u1 - 1, u1 ~ x + z, data = df)
+unm_glm(y ~ x + z + u1 - 1, u1 ~ x + z, family2 = gaussian(), data = df)
 glm(y ~ x + z - 1, data = df)
 
 # polynomial model
-unm_glm(y ~ x + poly(z, 2) + u1, u1 ~ x + z, data = df)
+unm_glm(y ~ x + poly(z, 2) + u1, u1 ~ x + z, family2 = gaussian(), data = df)
 glm(y ~ x + poly(z, 2), data = df)
 
 # interaction model
-unm_glm(y ~ x*z + u1, u1 ~ x*z, data = df)
+unm_glm(y ~ x*z + u1, u1 ~ x*z, family2 = gaussian(), data = df)
 glm(y ~ x*z, data = df)
 
 
@@ -221,8 +182,8 @@ unm_summary(unm_mod, df)
 # a poisson-normal model
 df <- runm(100, response = "pois", confounder1 = "norm")
 (unm_mod <- unm_glm(
-  y ~ x + z + u1 + offset(log(t)), family1 = poisson(),
-  u1 ~ x + z,
+  y ~ x + z + u1 + offset(log(t)),
+  u1 ~ x + z, family1 = poisson(), family2 = gaussian(),
   data = df
 ))
 glm(y ~ x + z + offset(log(t)), family = poisson(), data = df)
@@ -246,7 +207,7 @@ unm_summary(unm_mod, df)
 df <- runm(100, response = "gam", confounder1 = "norm")
 (unm_mod <- unm_glm(
   y ~ x + z + u1, family1 = Gamma(link = "log"),
-  u1 ~ x + z,
+  u1 ~ x + z, family2 = gaussian(),
   data = df
 ))
 glm(y ~ x + z, family = Gamma(link = "log"), data = df)
@@ -270,7 +231,7 @@ print(unm_backfill(df, unm_mod), n = 50)
 
 # the output of unm_glm() is classed jags output
 (df <- runm(20, response = "norm", confounder1 = "norm"))
-(unm_mod <- unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df))
+(unm_mod <- unm_glm(y ~ x + z + u1, u1 ~ x + z, family2 = gaussian(), data = df))
 class(unm_mod)
 jags_code(unm_mod)
 unm_glm(y ~ x + z + u1, u1 ~ x + z, data = df, code_only = TRUE)
@@ -336,9 +297,40 @@ samps$`.draw`
 df$ht <- df$y
 df$age <- df$u1
 df$biom <- df$x
-(unm_mod <- unm_glm(ht ~ x + biom + age, age ~ x + biom, data = df))
+(unm_mod <- unm_glm(ht ~ x + biom + age, age ~ x + biom, family2 = gaussian(), data = df))
 jags_code(unm_mod)
 
+# ~~ Two Unmeasured Confounders Examples (III-Stage Model) ~~
+# a normal-normal-normal model - internal validation
+(df <- runm(20, response = "norm", confounder1 = "norm", confounder2 = "norm"))
+(unm_mod <- unm_glm(y ~ x + z + u1 + u2, u1 ~ x + z + u2,
+  u2 ~ x + z, family2 = gaussian(), family3 = gaussian(), data = df))
+glm(y ~ x + z, data = df)
+coef(unm_mod)
+unm_summary(unm_mod)
+unm_summary(unm_mod, df) # true values known
+df
+unm_backfill(df, unm_mod)
+unm_glm(y ~ x + z + u1 + u2, u1 ~ x + z + u2,
+  u2 ~ x + z, family2 = gaussian(), family3 = gaussian(), data = df, code_only = TRUE)
+
+
+
+# a normal-normal-normal model - external validation
+(data_on_response <- runm(c(15, 10), confounder2 = "norm", type = "ext"))
+(data_on_confounder <- runm(c(10, 5), confounder2 = "norm", type = "ext"))
+(df <- rbind(data_on_response, data_on_confounder))
+(unm_mod <- unm_glm(y ~ x + z + u1 + u2, u1 ~ x + z + u2,
+  u2 ~ x + z, family2 = gaussian(), family3 = gaussian(), data = df))
+unm_backfill(df, unm_mod)
+
+
+
+# a binomial-binomial-binomial model - internal validation
+unm_glm(y ~ x + z + u1 + u2, family1 = binomial(),
+  u1 ~ x + z + u2, family2 = binomial(),
+  u2 ~ x + z, family3 = binomial(),
+  data = df, code_only = TRUE)
 }
 \seealso{
 \code{\link[=runm]{runm()}}, \code{\link[rjags:dic.samples]{rjags::dic.samples()}}
