@@ -89,8 +89,8 @@ runm_full <- function(n, response = "norm",
   #make treatment
   if(treatment == TRUE) {
     W <- model.matrix(~ ., data = df)
-    if(is.na(confounder2)) {ga <- c("ga_1" = -1, "ga_x" = .5, "ga_u1" = .75)
-    } else ga <- c("ga_1" = -1, "ga_x" = .5, "ga_u1" = .75, "ga_u2" = .75)
+    if(is.na(confounder2)) {ga <- c("ga_1" = -1, "ga_z" = .5, "ga_u1" = .75)
+    } else ga <- c("ga_1" = -1, "ga_z" = .5, "ga_u1" = .75, "ga_u2" = .75)
     p_ga <- length(ga) # = # non-confounder params in treatment model
     df$x <- rbinom(n, 1, binomial()$linkinv(W %*% ga))
   } else df$x <- 0 # For the case of external validation data
@@ -98,7 +98,7 @@ runm_full <- function(n, response = "norm",
   #make response
   X <- model.matrix(~ ., data = df)
   be1 <- c("be_1" = -1, "be_x" = .75)
-  be2 <- c("be_x" = .75)
+  be2 <- c("be_z" = .75)
   p_be <- length(be1) + length(be2) # = # non-confounder params in response model
   if(is.na(confounder2)) {la <- c("la_u1" = .75)
   } else la <- c("la_u1" = .75, "la_u2" = .75)
@@ -116,13 +116,13 @@ runm_full <- function(n, response = "norm",
                       "pois" = function(x) poisson()$linkinv(as.numeric(x)),
                       "gam" = function(x) Gamma(link = "log")$linkinv(as.numeric(x))
   )
-  rresp <- switch(response,
+  resp <- switch(response,
                   "norm" = function(n) rnorm(n, invlink_y(X %*% th), si_y),
                   "bin" = function(n) rbinom(n, 1, invlink_y(X %*% th)),
                   "pois" = function(n) rpois(n, lambda = df$t * invlink_y(X %*% th)),
                   "gam" = function(n) rgamma(n, shape = al_y, rate = al_y / invlink_y(X %*% th))
   )
-  df$y <- rresp(n)
+  df$y <- resp(n)
 
 
   # add metadata
@@ -230,13 +230,13 @@ runm_full <- function(n, response = "norm",
                       "pois" = function(x) poisson()$linkinv(as.numeric(x)),
                       "gam" = function(x) Gamma(link = "log")$linkinv(as.numeric(x))
   )
-  rresp <- switch(response,
+  resp <- switch(response,
                   "norm" = function(n) rnorm(n, invlink_y(X %*% th), si_y),
                   "bin" = function(n) rbinom(n, 1, invlink_y(X %*% th)),
                   "pois" = function(n) rpois(n, lambda = df$t * invlink_y(X %*% th)),
                   "gam" = function(n) rgamma(n, shape = al_y, rate = al_y / invlink_y(X %*% th))
   )
-  df$y <- rresp(n)
+  df$y <- resp(n)
 
 
   # add metadata
@@ -261,7 +261,7 @@ runm_full <- function(n, response = "norm",
 #'
 #' @param n Number of observations
 #' @param response `"norm"`, `"bin"`, `"pois"`, or `"gam"`
-#' @param response_param Nuisance priors for response type
+#' @param response_param Nuisance parameters for response type.
 #' @param covariate_fam_list A list of either `"norm"` or `"bin"`, where the length
 #'  of the list matches the number of covariates in the model.
 #' @param covariate_param_list A list of parameters for the respective distributions
@@ -446,13 +446,13 @@ runm_full_extended <- function(n,
                       "pois" = function(x) poisson()$linkinv(as.numeric(x)),
                       "gam" = function(x) Gamma(link = "log")$linkinv(as.numeric(x))
   )
-  rresp <- switch(response,
+  resp <- switch(response,
                   "norm" = function(n) rnorm(n, invlink_y(X %*% th), si_y),
                   "bin" = function(n) rbinom(n, 1, invlink_y(X %*% th)),
                   "pois" = function(n) rpois(n, lambda = df$t * invlink_y(X %*% th)),
                   "gam" = function(n) rgamma(n, shape = al_y, rate = al_y / invlink_y(X %*% th))
   )
-  df_combined$y <- rresp(n)
+  df_combined$y <- resp(n)
 
 
   # add metadata

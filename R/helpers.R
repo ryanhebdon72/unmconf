@@ -53,7 +53,8 @@ greek_expander <- function(s) {
 #' @rdname helpers
 #' @export
 make_greek_coefs <- function(unm_mod) {
-  structure(
+  s
+  tructure(
     lapply(
       unm_mod,
       function(mcmc) {
