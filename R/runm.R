@@ -89,10 +89,10 @@ runm_full <- function(n, response = "norm",
   #make treatment
   if(treatment == TRUE) {
     W <- model.matrix(~ ., data = df)
-    if(is.na(confounder2)) {ga <- c("ga_1" = -1, "ga_z" = .5, "ga_u1" = .75)
-    } else ga <- c("ga_1" = -1, "ga_z" = .5, "ga_u1" = .75, "ga_u2" = .75)
-    p_ga <- length(ga) # = # non-confounder params in treatment model
-    df$x <- rbinom(n, 1, binomial()$linkinv(W %*% ga))
+    if(is.na(confounder2)) {et <- c("et_1" = -1, "et_z" = .5, "et_u1" = .75)
+    } else et <- c("et_1" = -1, "et_z" = .5, "et_u1" = .75, "et_u2" = .75)
+    p_et <- length(et) # = # non-confounder params in treatment model
+    df$x <- rbinom(n, 1, binomial()$linkinv(W %*% et))
   } else df$x <- 0 # For the case of external validation data
 
   #make response
@@ -127,7 +127,7 @@ runm_full <- function(n, response = "norm",
 
   # add metadata
   if(treatment == TRUE) {
-    params <- drop_nulls(c(ga, be1, be2, la, si_y, al_y))
+    params <- drop_nulls(c(et, be1, be2, la, si_y, al_y))
   } else params <- drop_nulls(c(be1, be2, la, si_y, al_y))
   names(params) <- expand_labels(names(params))
   params
@@ -203,10 +203,10 @@ runm_full <- function(n, response = "norm",
   #make treatment
   if(treatment == TRUE) {
     W <- model.matrix(~ ., data = df)
-    if(is.na(confounder2)) {ga <- c("ga_1" = -1, "ga_z" = .4, "ga_u1" = .75)
-    } else ga <- c("ga_1" = -1, "ga_z" = .4, "ga_u1" = .75, "ga_u2" = .75)
-    p_ga <- length(ga) # = # non-confounder params in treatment model
-    df$x <- rbinom(n, 1, binomial()$linkinv(W %*% ga))
+    if(is.na(confounder2)) {et <- c("et_1" = -1, "et_z" = .4, "et_u1" = .75)
+    } else et <- c("et_1" = -1, "et_z" = .4, "et_u1" = .75, "et_u2" = .75)
+    p_et <- length(et) # = # non-confounder params in treatment model
+    df$x <- rbinom(n, 1, binomial()$linkinv(W %*% et))
   } else df$x <- 0 # For the case of external validation data
 
   #make response
@@ -241,7 +241,7 @@ runm_full <- function(n, response = "norm",
 
   # add metadata
   if(treatment == TRUE) {
-    params <- drop_nulls(c(ga, be1, be2, la, si_y, al_y))
+    params <- drop_nulls(c(et, be1, be2, la, si_y, al_y))
   } else params <- drop_nulls(c(be1, be2, la, si_y, al_y))
   names(params) <- expand_labels(names(params))
   params
@@ -405,16 +405,17 @@ runm_full_extended <- function(n,
   names(df_combined) == names(x_param_vec)[-1]
   vec_names <- names(x_param_vec)
   names(x_param_vec) <- sapply(vec_names, function(.) {
-    if(grepl("z|nt", .)) {
-      glue::glue("ga_{.}")
-    } else glue::glue("ze_{.}")
+    glue::glue("et_{.}")
+    # if(grepl("z|nt", .)) {
+    #   glue::glue("ga_{.}")
+    # } else glue::glue("ze_{.}")
   })
   #make treatment
   if(treatment == TRUE) {
     W <- model.matrix(~ ., data = df_combined)
-    ga <- x_param_vec
-    p_ga <- length(ga) # = # non-confounder params in treatment model
-    df_combined$x <- rbinom(n, 1, binomial()$linkinv(W %*% ga))
+    et <- x_param_vec
+    p_et <- length(et) # = # non-confounder params in treatment model
+    df_combined$x <- rbinom(n, 1, binomial()$linkinv(W %*% et))
   } else df_combined$x <- 0 # For the case of external validation data
 
   #make response
@@ -457,7 +458,7 @@ runm_full_extended <- function(n,
 
   # add metadata
   if(treatment == TRUE) {
-    params <- drop_nulls(c(ga, be, si_y, al_y))
+    params <- drop_nulls(c(et, be, si_y, al_y))
   } else params <- drop_nulls(c(be, si_y, al_y))
   names(params) <- expand_labels(names(params))
   params

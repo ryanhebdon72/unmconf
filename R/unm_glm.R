@@ -452,10 +452,10 @@ unm_glm <- function(
       c( g("beta[{1:p_be}]"), g("lambda[{1:p_la}]"), g("gamma[{1:p_ga}]") )
     } else {
       c( g("beta[{1:p_be}]"), g("lambda[{1:p_la}]"), g("gamma[{1:p_ga}]"),
-         g("delta[{1:p_de}]"), g("zeta[{1:p_ze}]") )
+         g("zeta[{1:p_ze}]"), g("delta[{1:p_de}]") )
     }
   real_coefs <- c( g("beta[{X_vars}]"), g("lambda[{U_vars}]"), g("gamma[{W_vars}]"),
-                   g("delta[{V_vars}]"), g("zeta[{U2_vars}]") )
+                   g("zeta[{U2_vars}]"), g("delta[{V_vars}]") )
   real_coefs <- gsub("\\(Intercept\\)", "1", real_coefs)
 
   # make function to convert coefficient names, e.g. gamma[x] -> gamma[2]

@@ -4,8 +4,8 @@
 #'
 #' @param labs A character vector of greek symbols of the form `ga_x` and `be_1`
 #' @param s A character vector of Greek short hand codes, e.g. `"si"`
-#' @param unm_mod Output of [unm_glm()]
-#' @param data The data `unm_mod` was generated with
+#' @param mod Output of [unm_glm()]
+#' @param data The data `mod` was generated with
 #' @param quantiles A numeric vector of quantiles
 #' @return A character vector
 #' @name helpers
@@ -45,26 +45,27 @@ greek_expander <- function(s) {
     "ze" = "zeta",
     "la" = "lambda",
     "be" = "beta",
-    "al" = "alpha"
+    "al" = "alpha",
+    "et" = "eta"
   )[s]
 }
 
 
 #' @rdname helpers
 #' @export
-make_greek_coefs <- function(unm_mod) {
+make_greek_coefs <- function(mod) {
   s
   tructure(
     lapply(
-      unm_mod,
+      mod,
       function(mcmc) {
         attr(mcmc, "dimnames") <- list(NULL, expand_labels(attr(mcmc, "dimnames")[[2]]))
         mcmc
       }
     ),
-    class = attr(unm_mod, "class"),
-    file = attr(unm_mod, "file"),
-    code = attr(unm_mod, "code")
+    class = attr(mod, "class"),
+    file = attr(mod, "file"),
+    code = attr(mod, "code")
   )
 }
 
@@ -72,12 +73,12 @@ make_greek_coefs <- function(unm_mod) {
 
 #' @rdname helpers
 #' @export
-unm_summary <- function(unm_mod, data, quantiles = c(.025, .975)) {
+unm_summary <- function(mod, data, quantiles = c(.025, .975)) {
 
   param <- NULL; rm(param)
   true_value <- NULL; rm(true_value)
 
-  summary <- summary(unm_mod, quantiles = quantiles)
+  summary <- summary(mod, quantiles = quantiles)
 
   stats <- summary$statistics |>
     as.data.frame() |>
