@@ -7,7 +7,7 @@
 \alias{coef.unm_int}
 \alias{unm_backfill}
 \alias{unm_dic}
-\title{Modeling with Unmeasured Confounders}
+\title{Fitting Multi-Staged Bayesian Regression Model with Unmeasured Confounders}
 \usage{
 unm_glm(
   form1,
@@ -107,7 +107,11 @@ turned off with \code{options("unm_print_call" = FALSE)}}
 \code{file} containing the filename of the jags code.
 }
 \description{
-Modeling with Unmeasured Confounders
+\code{\link[=unm_glm]{unm_glm()}} fits a multi-staged Bayesian regression model that accounts for unmeasured
+confounders. Users can input model
+information into \code{\link[=unm_glm]{unm_glm()}} in a similar manner as they would for the standard \code{\link[stats:glm]{stats::glm()}}
+function, providing arguments like \code{formula}, \code{family}, and \code{data}.
+Results are stored as MCMC iterations.
 }
 \examples{
 

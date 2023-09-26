@@ -5,27 +5,20 @@
 \alias{expand_labels}
 \alias{greek_expander}
 \alias{make_greek_coefs}
-\alias{unm_summary}
 \title{Convert to Greek expressions}
 \usage{
 expand_labels(labs)
 
 greek_expander(s)
 
-make_greek_coefs(unm_mod)
-
-unm_summary(unm_mod, data, quantiles = c(0.025, 0.975))
+make_greek_coefs(mod)
 }
 \arguments{
 \item{labs}{A character vector of greek symbols of the form \code{ga_x} and \code{be_1}}
 
 \item{s}{A character vector of Greek short hand codes, e.g. \code{"si"}}
 
-\item{unm_mod}{Output of \code{\link[=unm_glm]{unm_glm()}}}
-
-\item{data}{The data \code{unm_mod} was generated with}
-
-\item{quantiles}{A numeric vector of quantiles}
+\item{mod}{Output from \code{\link[=unm_glm]{unm_glm()}}.}
 }
 \value{
 A character vector

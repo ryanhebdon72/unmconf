@@ -274,7 +274,7 @@ runm_full <- function(n, response = "norm",
 #'  in `unmeasured_fam_list`, where the length of the list matches the length of
 #'  `unmeasured_fam_list`.
 #' @param response_model_coefs A named vector of coefficients to generate data from
-#' the response model. This must include an intercept (`"int" =`), a coefficient
+#' the response model. This must include an intercept (`"int" = `), a coefficient
 #' for each covariate specified, a coefficient for each unmeasured confounder,
 #' and a treatment coefficient (`"x" = `).
 #' @param treatment_model_coefs A named vector of coefficients to generate data from
@@ -282,11 +282,11 @@ runm_full <- function(n, response = "norm",
 #' for each covariate specified, and a coefficient for each unmeasured confounder.
 #' @param type `"int"` or `"ext"`
 #' @param missing_prop Proportion of missing values. Only used when `type = "int"`
-#'
 #' @export
-#' @name runm_extended
+#' @rdname runm
 #'
 #' @examples
+#'
 #' runm_extended(n = 100,
 #'               response = "norm",
 #'               response_param = c("si_y" = 1),

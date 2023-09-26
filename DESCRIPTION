@@ -14,8 +14,7 @@ Authors@R:
            email = "david_kahle@baylor.edu",
            comment = c(ORCID = "0000-0002-9999-1558")))
 Maintainer: David Kahle <david_kahle@baylor.edu>
-Description: Modeling with Unmeasured Confounding
-    Using the Bayesian framework.
+Description: A package that fits and assesses Bayesian multi-staged regression models while accounting for unmeasured confounders.
 SystemRequirements: JAGS >= 4.3.0 (http://mcmc-jags.sourceforge.net)
 License: MIT + file LICENSE
 Encoding: UTF-8

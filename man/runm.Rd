@@ -2,6 +2,7 @@
 % Please edit documentation in R/runm.R
 \name{runm}
 \alias{runm}
+\alias{runm_extended}
 \title{Generate synthetic data}
 \usage{
 runm(
@@ -9,6 +10,20 @@ runm(
   response = "norm",
   confounder1 = "norm",
   confounder2 = NA,
+  type = "int",
+  missing_prop = 0.8
+)
+
+runm_extended(
+  n,
+  covariate_fam_list,
+  covariate_param_list,
+  unmeasured_fam_list,
+  unmeasured_param_list,
+  treatment_model_coefs,
+  response_model_coefs,
+  response,
+  response_param,
   type = "int",
   missing_prop = 0.8
 )
@@ -25,6 +40,32 @@ runm(
 \item{type}{\code{"int"} or \code{"ext"}}
 
 \item{missing_prop}{Proportion of missing values. Only used when \code{type = "int"}}
+
+\item{covariate_fam_list}{A list of either \code{"norm"} or \code{"bin"}, where the length
+of the list matches the number of covariates in the model.}
+
+\item{covariate_param_list}{A list of parameters for the respective distributions
+in \code{covariate_fam_list}, where the length of the list matches the length of
+\code{covariate_fam_list}.}
+
+\item{unmeasured_fam_list}{A list of either \code{"norm"} or \code{"bin"}, where the length
+of the list matches the number of unmeasured confounders in the model. This can
+be at most a length of 2 to pair with \code{\link[=unm_glm]{unm_glm()}}.}
+
+\item{unmeasured_param_list}{A list of parameters for the respective distributions
+in \code{unmeasured_fam_list}, where the length of the list matches the length of
+\code{unmeasured_fam_list}.}
+
+\item{treatment_model_coefs}{A named vector of coefficients to generate data from
+the treatment model. This must include an intercept (\verb{"int" =}), a coefficient
+for each covariate specified, and a coefficient for each unmeasured confounder.}
+
+\item{response_model_coefs}{A named vector of coefficients to generate data from
+the response model. This must include an intercept (\verb{"int" = }), a coefficient
+for each covariate specified, a coefficient for each unmeasured confounder,
+and a treatment coefficient (\verb{"x" = }).}
+
+\item{response_param}{Nuisance parameters for response type.}
 }
 \value{
 A \code{tibble}
@@ -33,6 +74,9 @@ A \code{tibble}
 \code{\link[=runm]{runm()}} generates synthetic data for use in examples of models with
 unmeasured confounders (can take up to two unmeasured confounders). Defaults to
 one unmeasured confounder.
+
+\code{\link[=runm_extended]{runm_extended()}} enables more customized data generation process for user.
+Currently set up to have at most 2 unmeasured confounders to pair with \code{unm_glm()}.
 }
 \examples{
 
@@ -56,4 +100,17 @@ runm(20, response = "gam", confounder1 = "bin", confounder2 = "bin", missing_pro
 runm(c(15,5), type = "ext")
 runm(c(15,5), response = "norm", confounder1 = "norm", type = "ext")
 runm(c(15,5), response = "norm", confounder1 = "bin", confounder2 = "norm", type = "ext")
+
+runm_extended(n = 100,
+              response = "norm",
+              response_param = c("si_y" = 1),
+              covariate_fam_list = list("norm", "bin", "norm"),
+              covariate_param_list = list(c(mean = 0, sd = 1), c(.3), c(0, 2)),
+              unmeasured_fam_list = list("norm", "bin"),
+              unmeasured_param_list = list(c(mean = 0, sd = 1), c(.3)),
+              response_model_coefs = c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
+                                       "u1" = .75, "u2" = .75, "x" = .75),
+              treatment_model_coefs = c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
+                                        "u1" = .75, "u2" = .75),
+              type = "int", missing_prop = .80)
 }

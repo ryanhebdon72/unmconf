@@ -1,6 +1,10 @@
-#' Modeling with Unmeasured Confounders
+#' Fitting Multi-Staged Bayesian Regression Model with Unmeasured Confounders
 #'
-#' Modeling with Unmeasured Confounders
+#' [unm_glm()] fits a multi-staged Bayesian regression model that accounts for unmeasured
+#' confounders. Users can input model
+#' information into [unm_glm()] in a similar manner as they would for the standard [stats::glm()]
+#' function, providing arguments like `formula`, `family`, and `data`.
+#' Results are stored as MCMC iterations.
 #'
 #' @param form1 The formula specification for the response model (stage I)
 #' @param form2 The formula specification for the first unmeasured confounder model (stage II)

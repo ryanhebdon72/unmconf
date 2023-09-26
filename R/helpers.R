@@ -4,9 +4,7 @@
 #'
 #' @param labs A character vector of greek symbols of the form `ga_x` and `be_1`
 #' @param s A character vector of Greek short hand codes, e.g. `"si"`
-#' @param mod Output of [unm_glm()]
-#' @param data The data `mod` was generated with
-#' @param quantiles A numeric vector of quantiles
+#' @param mod Output from [unm_glm()].
 #' @return A character vector
 #' @name helpers
 #' @examples
@@ -54,8 +52,7 @@ greek_expander <- function(s) {
 #' @rdname helpers
 #' @export
 make_greek_coefs <- function(mod) {
-  s
-  tructure(
+  structure(
     lapply(
       mod,
       function(mcmc) {
@@ -68,46 +65,6 @@ make_greek_coefs <- function(mod) {
     code = attr(mod, "code")
   )
 }
-
-
-
-#' @rdname helpers
-#' @export
-unm_summary <- function(mod, data, quantiles = c(.025, .975)) {
-
-  param <- NULL; rm(param)
-  true_value <- NULL; rm(true_value)
-
-  summary <- summary(mod, quantiles = quantiles)
-
-  stats <- summary$statistics |>
-    as.data.frame() |>
-    tibble::as_tibble(rownames = "param") |>
-    janitor::clean_names() |>
-    dplyr::select(param, mean)
-
-  cis <- summary$quantiles |>
-    as.data.frame() |>
-    tibble::as_tibble(rownames = "param")
-
-  out <- stats |>
-    dplyr::left_join(cis, by = "param")
-
-  if (!missing(data)) {
-    out <- out |>
-      dplyr::left_join(
-        tibble::enframe(attr(data, "param"), name = "param", value = "true_value"),
-        by = "param"
-      ) |>
-      dplyr::relocate(true_value, .after = mean)
-  }
-
-  out
-
-}
-
-
-
 
 
 

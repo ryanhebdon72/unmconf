@@ -6,5 +6,5 @@
 \alias{package-unmconf}
 \title{unmconf: Modeling with Unmeasured Confounding}
 \description{
-Modeling with Unmeasured Confounding
+A package that fits and assesses Bayesian multi-staged regression models while accounting for unmeasured confounders.
 }

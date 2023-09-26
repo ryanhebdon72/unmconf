@@ -1,6 +1,6 @@
 #' unmconf: Modeling with Unmeasured Confounding
 #'
-#' Modeling with Unmeasured Confounding
+#' A package that fits and assesses Bayesian multi-staged regression models while accounting for unmeasured confounders.
 #'
 #' @import rjags
 #' @importFrom stats rexp rnorm rgamma rpois runif rbinom coef Gamma binomial
