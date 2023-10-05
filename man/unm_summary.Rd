@@ -17,7 +17,7 @@ unm_summary(mod, data, quantiles = c(0.025, 0.975))
 A \code{tibble}
 }
 \description{
-\code{\link[=unm_summary]{unm_summary()}} generates synthetic data for use in examples of models with
-unmeasured confounders (can take up to two unmeasured confounders). Defaults to
-one unmeasured confounder.
+\code{\link[=unm_summary]{unm_summary()}} produces result summaries of the results from the model fitting
+function, \code{\link[=unm_glm]{unm_glm()}}. The table of results are summarized from the MCMC draws of
+the posterior distribution.
 }

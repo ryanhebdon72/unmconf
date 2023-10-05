@@ -1,8 +1,8 @@
 #' Generate synthetic data
 #'
-#' [unm_summary()] generates synthetic data for use in examples of models with
-#' unmeasured confounders (can take up to two unmeasured confounders). Defaults to
-#' one unmeasured confounder.
+#' [unm_summary()] produces result summaries of the results from the model fitting
+#' function, [unm_glm()]. The table of results are summarized from the MCMC draws of
+#' the posterior distribution.
 #'
 #'
 #' @param mod Output from [unm_glm()].

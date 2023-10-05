@@ -3,7 +3,11 @@ Type: Package
 Title: Modeling with Unmeasured Confounding
 Version: 0.1.0
 Authors@R: 
-    c(person(given = "James",
+    c(person(given = "Ryan",
+           family = "Hebdon",
+           role = c("aut"),
+           email = "ryan_hebdon@baylor.edu"),
+    person(given = "James",
            family = "Stamey",
            role = c("aut"),
            email = "james_stamey@baylor.edu",
