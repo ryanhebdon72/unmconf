@@ -1,17 +1,19 @@
 #' Fitting Multi-Staged Bayesian Regression Model with Unmeasured Confounders
 #'
-#' [unm_glm()] fits a multi-staged Bayesian regression model that accounts for unmeasured
-#' confounders. Users can input model
-#' information into [unm_glm()] in a similar manner as they would for the standard [stats::glm()]
-#' function, providing arguments like `formula`, `family`, and `data`.
-#' Results are stored as MCMC iterations.
+#' [unm_glm()] fits a multi-staged Bayesian regression model that accounts for
+#' unmeasured confounders. Users can input model information into [unm_glm()] in
+#' a similar manner as they would for the standard [stats::glm()] function,
+#' providing arguments like `formula`, `family`, and `data`. Results are stored
+#' as MCMC iterations.
 #'
 #' @param form1 The formula specification for the response model (stage I)
-#' @param form2 The formula specification for the first unmeasured confounder model (stage II)
-#' @param form3 The formula specification for the second unmeasured confounder model (stage III)
-#' @param family1,family2,family3 The family object, communicating the types of models
-#'   to be used for response (`form1`) and unmeasured confounder (`form2, form3`) models. See
-#'   [stats::family()] for details
+#' @param form2 The formula specification for the first unmeasured confounder
+#'   model (stage II)
+#' @param form3 The formula specification for the second unmeasured confounder
+#'   model (stage III)
+#' @param family1,family2,family3 The family object, communicating the types of
+#'   models to be used for response (`form1`) and unmeasured confounder (`form2,
+#'   form3`) models. See [stats::family()] for details
 #' @param data The dataset containing all variables (this function currently
 #'   only supports a single dataset containing internally validated data)
 #' @param n.iter `n.iter` argument of [rjags::coda.samples()]
@@ -29,11 +31,16 @@
 #' @param code_only Should only the code be created?
 #' @param default_prior The default prior to use on the regression coefficients.
 #' @param priors Custom priors to use on regression coefficients, see examples.
-#' @param response_nuisance_priors,confounder1_nuisance_priors,confounder2_nuisance_priors
-#'   JAGS code for the nuisance priors on parameters in a JAGS model (see examples)
-#' @param response_params_to_track,confounder1_params_to_track,confounder2_params_to_track
-#'   Additional parameters to track when nuisance parameter priors are used (see examples)
-#' @param ... Additional arguments to pass into [rjags::jags.model()], such as `inits`
+#' @param
+#'   response_nuisance_priors,confounder1_nuisance_priors,confounder2_nuisance_priors
+#'   JAGS code for the nuisance priors on parameters in a JAGS model (see
+#'   examples)
+#' @param
+#'   response_params_to_track,confounder1_params_to_track,confounder2_params_to_track
+#'   Additional parameters to track when nuisance parameter priors are used (see
+#'   examples)
+#' @param ... Additional arguments to pass into [rjags::jags.model()], such as
+#'   `inits`
 #' @return (Invisibly) The output of [rjags::coda.samples()], an object of class
 #'   `mcmc.list`, along with attributes `code` containing the jags code used and
 #'   `file` containing the filename of the jags code.
@@ -42,6 +49,7 @@
 #' @examples
 #'
 #' # ~~ One Unmeasured Confounder Examples (II-Stage Model) ~~
+#'
 #' # normal response, normal confounder model with internally validated data
 #' (df <- runm(20, response = "norm", confounder1 = "norm"))
 #' (unm_mod <- unm_glm(y ~ x + z + u1, u1 ~ x + z, family2 = gaussian(), data = df))

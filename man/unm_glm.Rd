@@ -49,13 +49,14 @@ unm_dic(mod)
 \arguments{
 \item{form1}{The formula specification for the response model (stage I)}
 
-\item{form2}{The formula specification for the first unmeasured confounder model (stage II)}
+\item{form2}{The formula specification for the first unmeasured confounder
+model (stage II)}
 
-\item{form3}{The formula specification for the second unmeasured confounder model (stage III)}
+\item{form3}{The formula specification for the second unmeasured confounder
+model (stage III)}
 
-\item{family1, family2, family3}{The family object, communicating the types of models
-to be used for response (\code{form1}) and unmeasured confounder (\verb{form2, form3}) models. See
-\code{\link[stats:family]{stats::family()}} for details}
+\item{family1, family2, family3}{The family object, communicating the types of
+models to be used for response (\code{form1}) and unmeasured confounder (\verb{form2, form3}) models. See \code{\link[stats:family]{stats::family()}} for details}
 
 \item{data}{The dataset containing all variables (this function currently
 only supports a single dataset containing internally validated data)}
@@ -84,11 +85,14 @@ Defaults to \code{"none"}, but you can change it on a per-session basis with
 
 \item{priors}{Custom priors to use on regression coefficients, see examples.}
 
-\item{response_nuisance_priors, confounder1_nuisance_priors, confounder2_nuisance_priors}{JAGS code for the nuisance priors on parameters in a JAGS model (see examples)}
+\item{response_nuisance_priors, confounder1_nuisance_priors, confounder2_nuisance_priors}{JAGS code for the nuisance priors on parameters in a JAGS model (see
+examples)}
 
-\item{response_params_to_track, confounder1_params_to_track, confounder2_params_to_track}{Additional parameters to track when nuisance parameter priors are used (see examples)}
+\item{response_params_to_track, confounder1_params_to_track, confounder2_params_to_track}{Additional parameters to track when nuisance parameter priors are used (see
+examples)}
 
-\item{...}{Additional arguments to pass into \code{\link[rjags:jags.model]{rjags::jags.model()}}, such as \code{inits}}
+\item{...}{Additional arguments to pass into \code{\link[rjags:jags.model]{rjags::jags.model()}}, such as
+\code{inits}}
 
 \item{mod}{The output of \code{\link[=unm_glm]{unm_glm()}}}
 
@@ -107,15 +111,16 @@ turned off with \code{options("unm_print_call" = FALSE)}}
 \code{file} containing the filename of the jags code.
 }
 \description{
-\code{\link[=unm_glm]{unm_glm()}} fits a multi-staged Bayesian regression model that accounts for unmeasured
-confounders. Users can input model
-information into \code{\link[=unm_glm]{unm_glm()}} in a similar manner as they would for the standard \code{\link[stats:glm]{stats::glm()}}
-function, providing arguments like \code{formula}, \code{family}, and \code{data}.
-Results are stored as MCMC iterations.
+\code{\link[=unm_glm]{unm_glm()}} fits a multi-staged Bayesian regression model that accounts for
+unmeasured confounders. Users can input model information into \code{\link[=unm_glm]{unm_glm()}} in
+a similar manner as they would for the standard \code{\link[stats:glm]{stats::glm()}} function,
+providing arguments like \code{formula}, \code{family}, and \code{data}. Results are stored
+as MCMC iterations.
 }
 \examples{
 
 # ~~ One Unmeasured Confounder Examples (II-Stage Model) ~~
+
 # normal response, normal confounder model with internally validated data
 (df <- runm(20, response = "norm", confounder1 = "norm"))
 (unm_mod <- unm_glm(y ~ x + z + u1, u1 ~ x + z, family2 = gaussian(), data = df))
