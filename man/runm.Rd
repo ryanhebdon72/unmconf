@@ -33,14 +33,6 @@ runm_int(
 )
 
 runm_ext(n_main, n_external, response, confounder1, confounder2)
-
-runm_full(
-  n,
-  response = "norm",
-  confounder1 = "norm",
-  confounder2 = NA,
-  treatment = TRUE
-)
 }
 \arguments{
 \item{n}{Number of observations}
