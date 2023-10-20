@@ -5,7 +5,7 @@ Version: 0.1.0
 Authors@R: 
     c(person(given = "Ryan",
            family = "Hebdon",
-           role = c("aut"),
+           role = c("aut", "cph"),
            email = "ryan_hebdon@baylor.edu"),
     person(given = "James",
            family = "Stamey",
@@ -17,7 +17,7 @@ Authors@R:
            role = c("aut", "cre"),
            email = "david_kahle@baylor.edu",
            comment = c(ORCID = "0000-0002-9999-1558")))
-Maintainer: David Kahle <david_kahle@baylor.edu>
+Maintainer: Ryan Hebdon <ryan_hebdon@baylor.edu>
 Description: A package that fits and assesses Bayesian multi-staged regression models while accounting for unmeasured confounders.
 SystemRequirements: JAGS >= 4.3.0 (http://mcmc-jags.sourceforge.net)
 License: MIT + file LICENSE

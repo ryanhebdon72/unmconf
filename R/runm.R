@@ -74,12 +74,12 @@ runm_full <- function(n, response = "norm",
   df <- data.frame("z" = rnorm(n))
 
   rconf1 <- switch(confounder1,
-                   "norm" = function(n) rnorm(n, 0, 1),
+                   "norm" = function(n) rnorm(n),
                    "bin" = function(n) rbinom(n, 1, .5)
   )
 
   rconf2 <- switch(confounder2,
-                   "norm" = function(n) rnorm(n, 0, 1),
+                   "norm" = function(n) rnorm(n),
                    "bin" = function(n) rbinom(n, 1, .5)
   )
   #make confounders
@@ -181,78 +181,6 @@ runm_ext <- function(n_main, n_external, response, confounder1, confounder2) {
 
 
 
-
-runm_full <- function(n, response = "norm",
-                      confounder1 = "norm", confounder2 = NA, treatment = TRUE) {
-
-  df <- data.frame("z" = rnorm(n))
-
-  rconf1 <- switch(confounder1,
-                   "norm" = function(n) rnorm(n, 1, 1),
-                   "bin" = function(n) rbinom(n, 1, .7)
-  )
-
-  rconf2 <- switch(confounder2,
-                   "norm" = function(n) rnorm(n, 1, 1),
-                   "bin" = function(n) rbinom(n, 1, .7)
-  )
-  #make confounders
-  df$u1 <- rconf1(n)
-  if(!is.na(confounder2)) df$u2 <- rconf2(n)
-
-  #make treatment
-  if(treatment == TRUE) {
-    W <- model.matrix(~ ., data = df)
-    if(is.na(confounder2)) {et <- c("et_1" = -1, "et_z" = .4, "et_u1" = .75)
-    } else et <- c("et_1" = -1, "et_z" = .4, "et_u1" = .75, "et_u2" = .75)
-    p_et <- length(et) # = # non-confounder params in treatment model
-    df$x <- rbinom(n, 1, binomial()$linkinv(W %*% et))
-  } else df$x <- 0 # For the case of external validation data
-
-  #make response
-  X <- model.matrix(~ ., data = df)
-  be1 <- c("be_1" = -1, "be_z" = .75)
-  be2 <- c("be_x" = .75)
-  p_be <- length(be1) + length(be2) # = # non-confounder params in response model
-  if(is.na(confounder2)) {la <- c("la_u1" = .75)
-  } else la <- c("la_u1" = .75, "la_u2" = .75)
-  p_la <- length(la) # = # confounder params in response model
-  (th <- c(be1, la, be2))
-
-
-  si_y <- if (response == "norm") c("si_y" = 1) else NULL
-  if (response == "pois") df$t <- runif(n, 1, 10)
-  al_y <- if (response == "gam") c("al_y" = 2) else NULL
-
-  invlink_y <- switch(response,
-                      "norm" = function(x) gaussian()$linkinv(as.numeric(x)),
-                      "bin" = function(x) binomial()$linkinv(as.numeric(x)),
-                      "pois" = function(x) poisson()$linkinv(as.numeric(x)),
-                      "gam" = function(x) Gamma(link = "log")$linkinv(as.numeric(x))
-  )
-  resp <- switch(response,
-                  "norm" = function(n) rnorm(n, invlink_y(X %*% th), si_y),
-                  "bin" = function(n) rbinom(n, 1, invlink_y(X %*% th)),
-                  "pois" = function(n) rpois(n, lambda = df$t * invlink_y(X %*% th)),
-                  "gam" = function(n) rgamma(n, shape = al_y, rate = al_y / invlink_y(X %*% th))
-  )
-  df$y <- resp(n)
-
-
-  # add metadata
-  if(treatment == TRUE) {
-    params <- drop_nulls(c(et, be1, be2, la, si_y, al_y))
-  } else params <- drop_nulls(c(be1, be2, la, si_y, al_y))
-  names(params) <- expand_labels(names(params))
-  params
-
-  df <- tibble::as_tibble(df)
-  attr(df, "params") <- params
-
-
-  # return
-  df
-}
 
 #' An expanded way to generate synthetic data
 #'
