@@ -327,19 +327,19 @@ unm_glm <- function(
   if (missing(response_nuisance_priors)) {
 
     response_nuisance_priors <- switch(family1$family,
-                                        # "gaussian" = g("tau_{y} <- 1 / ( sigma_{y} * sigma_{y} ); sigma_{y} ~ dunif(0, 100)"),
-                                        "gaussian" = g("tau_{y} ~ dt(0, 1, 3) I(0, )"),
-                                        "binomial" = " ",
-                                        "Gamma" = g("alpha_{y} ~ dgamma(.1, .1)"),
-                                        "poisson" = " "
+      # "gaussian" = g("tau_{y} <- 1 / ( sigma_{y} * sigma_{y} ); sigma_{y} ~ dunif(0, 100)"),
+      "gaussian" = g("tau_{y} ~ dt(0, 1, 3) I(0, )"),
+      "binomial" = " ",
+      "Gamma" = g("alpha_{y} ~ dgamma(.1, .1)"),
+      "poisson" = " "
     )
 
     response_params_to_track <- switch(family1$family,
-                                       # "gaussian" = g("sigma_{y}"),
-                                       "gaussian" = g("tau_{y}"),
-                                       "binomial" = character(0),
-                                       "Gamma" = g("alpha_{y}"),
-                                       "poisson" = character(0)
+      # "gaussian" = g("sigma_{y}"),
+      "gaussian" = g("tau_{y}"),
+      "binomial" = character(0),
+      "Gamma" = g("alpha_{y}"),
+      "poisson" = character(0)
     )
 
   } else {
@@ -550,10 +550,15 @@ unm_glm <- function(
   params_of_interest <- unique(sub("\\[.+\\]", "", real_coefs))
 
   # sample
-  samps <- coda.samples(jm,
-                        c(params_of_interest, response_params_to_track,
-                          confounder1_params_to_track, confounder2_params_to_track),
-                        n.iter = n.iter, thin = thin, progress.bar = progress.bar
+  samps <- coda.samples(
+    jm,
+    c(
+      params_of_interest,
+      response_params_to_track,
+      confounder1_params_to_track,
+      confounder2_params_to_track
+    ),
+    n.iter = n.iter, thin = thin, progress.bar = progress.bar
   )
 
 
