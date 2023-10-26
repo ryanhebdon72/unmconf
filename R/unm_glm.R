@@ -21,7 +21,6 @@
 #' @param thin `thin` argument of [rjags::coda.samples()]
 #' @param n.chains `n.chains` argument of [rjags::jags.model()]
 #' @param filename File name where to store jags code
-#' @param mod The output of [unmconf::unm_glm()]
 #' @param quiet The `quiet` parameter of [rjags::jags.model()]. Defaults to
 #'   `TRUE`, but you can change it on a per-session basis with
 #'   `options(unm_quiet = FALSE)`.
@@ -54,17 +53,21 @@
 #' (df <- runm(20, response = "norm"))
 #' (unm_mod <- unm_glm(y ~ x + z1 + z2 + z3 + u1,
 #'                     u1 ~ x + z1 + z2 + z3,
+#'                     family1 = gaussian(),
 #'                     family2 = gaussian(), data = df))
 #' (unm_mod <- unm_glm(y ~ .,
 #'                     u1 ~ . - y,
+#'                     family1 = gaussian(),
 #'                     family2 = gaussian(), data = df))
 #' glm(y ~ x + z1 + z2 + z3, data = df)
 #' coef(unm_mod)
-#' unm_summary(unm_mod)
-#' unm_summary(unm_mod, df) # true values known
-#' df
-#' unm_backfill(df, unm_mod)
-#' unm_glm(y ~ ., u1 ~ . - y, family2 = gaussian(), data = df, code_only = TRUE)
+#'
+#' jags_code(unm_mod)
+#' unm_glm(y ~ .,
+#'         u1 ~ . - y,
+#'         family1 = gaussian(),
+#'         family2 = gaussian(), data = df, code_only = TRUE)
+#'
 #'
 #'
 #'
@@ -72,19 +75,26 @@
 #' (df <- runm(c(10, 10), type = "ext", response = "norm"))
 #' (unm_mod <- unm_glm(y ~ x + z1 + z2 + z3 + u1,
 #'                     u1 ~ x + z1 + z2 + z3,
+#'                     family1 = gaussian(),
 #'                     family2 = gaussian(), data = df))
-#' unm_backfill(df, unm_mod)
 #'
 #'
 #'
 #' # setting custom priors
-#' unm_glm(y ~ ., u1 ~ . - y, family2 = gaussian(), data = df, code_only = TRUE)
-#' unm_glm(y ~ ., u1 ~ . - y, family2 = gaussian(), data = df, code_only = FALSE,
-#'   priors = c("lambda[u1]" = "dnorm(1, 10)"),
-#'   response_nuisance_priors = "tau_{y} <- sigma_{y}^-2; sigma_{y} ~ dunif(0, 100)",
-#'   response_params_to_track = "sigma_{y}",
-#'   confounder1_nuisance_priors = "tau_{u1} <- sigma_{u1}^-2; sigma_{u1} ~ dunif(0, 100)",
-#'   confounder1_params_to_track = "sigma_{u1}"
+#' unm_glm(y ~ .,
+#'         u1 ~ . - y,
+#'         family1 = gaussian(),
+#'         family2 = gaussian(), data = df, code_only = TRUE
+#' )
+#' unm_glm(y ~ .,
+#'         u1 ~ . - y,
+#'         family1 = gaussian(),
+#'         family2 = gaussian(), data = df, code_only = FALSE,
+#'         priors = c("lambda[u1]" = "dnorm(1, 10)"),
+#'         response_nuisance_priors = "tau_{y} <- sigma_{y}^-2; sigma_{y} ~ dunif(0, 100)",
+#'         response_params_to_track = "sigma_{y}",
+#'         confounder1_nuisance_priors = "tau_{u1} <- sigma_{u1}^-2; sigma_{u1} ~ dunif(0, 100)",
+#'         confounder1_params_to_track = "sigma_{u1}"
 #' )
 #'
 #'
@@ -96,15 +106,24 @@
 #'
 #' # more complex functional forms _for non-confounder predictors only_
 #' # zero-intercept model
-#' unm_glm(y ~ . - 1, u1 ~ . - y, family2 = gaussian(), data = df)
+#' unm_glm(y ~ . - 1,
+#'         u1 ~ . - y,
+#'         family1 = gaussian(),
+#'         family2 = gaussian(), data = df)
 #' glm(y ~ . - 1, data = df)
 #'
 #' # polynomial model
-#' unm_glm(y ~ x + poly(z1, 2) + u1, u1 ~ x + z1, family2 = gaussian(), data = df)
+#' unm_glm(y ~ x + poly(z1, 2) + u1,
+#'         u1 ~ x + z1,
+#'         family1 = gaussian(),
+#'         family2 = gaussian(), data = df)
 #' glm(y ~ x + poly(z1, 2), data = df)
 #'
 #' # interaction model
-#' unm_glm(y ~ x*z1 + u1, u1 ~ x*z1, family2 = gaussian(), data = df)
+#' unm_glm(y ~ x*z1 + u1,
+#'         u1 ~ x*z1,
+#'         family1 = gaussian(),
+#'         family2 = gaussian(), data = df)
 #' glm(y ~ x*z1, data = df)
 #'
 #'
@@ -116,13 +135,13 @@
 #'             unmeasured_fam_list = list("bin"),
 #'             unmeasured_param_list = list(.5)))
 #' (unm_mod <- unm_glm(
-#'   y ~ ., family1 = binomial(),
-#'   u1 ~ . - y, family2 = binomial(),
+#'   y ~ .,
+#'   u1 ~ . - y,
+#'   family1 = binomial(),
+#'   family2 = binomial(),
 #'   data = df
 #' ))
 #' glm(y ~ . - u1, family = binomial(), data = df)
-#' unm_backfill(df, unm_mod)
-#' unm_summary(unm_mod, df)
 #'
 #'
 #'
@@ -138,11 +157,12 @@
 #'
 #' (unm_mod <- unm_glm(
 #'   y ~ x + z + u1 + offset(log(t)),
-#'   u1 ~ x + z, family1 = poisson(), family2 = gaussian(),
+#'   u1 ~ x + z,
+#'   family1 = poisson(),
+#'   family2 = gaussian(),
 #'   data = df
 #' ))
 #' glm(y ~ x + z + offset(log(t)), family = poisson(), data = df)
-#' unm_summary(unm_mod, df)
 #'
 #'
 #'
@@ -161,7 +181,6 @@
 #'   data = df
 #' ))
 #' glm(y ~ x + z + offset(log(t)), family = poisson(), data = df)
-#' unm_summary(unm_mod, df)
 #'
 #'
 #'
@@ -180,7 +199,6 @@
 #'   data = df
 #' ))
 #' glm(y ~ x + z, family = Gamma(link = "log"), data = df)
-#' unm_summary(unm_mod, df)
 #'
 #'
 #'
@@ -199,9 +217,7 @@
 #'   data = df
 #' ))
 #' glm(y ~ x + z, family = Gamma(link = "log"), data = df)
-#' unm_summary(unm_mod, df)
 #' print(df, n = 25)
-#' print(unm_backfill(df, unm_mod), n = 25)
 #'
 #'
 #'
@@ -213,15 +229,6 @@
 #' unm_glm(y ~ ., u1 ~ . - y, data = df, code_only = TRUE)
 #'
 #'
-#'
-#' # computing the dic. penalty = effective number of parameters
-#' unm_dic(unm_mod)
-#' coef(unm_mod)
-#'
-#'
-#'
-#' # impute missing values with model
-#' unm_backfill(df, unm_mod)
 #'
 #'
 #'
@@ -273,7 +280,10 @@
 #' df$ht <- df$y
 #' df$age <- df$u1
 #' df$biom <- df$x
-#' (unm_mod <- unm_glm(ht ~ x + biom + age, age ~ x + biom, family2 = gaussian(), data = df))
+#' (unm_mod <- unm_glm(ht ~ x + biom + age,
+#'                     age ~ x + biom,
+#'                     family1 = gaussian(),
+#'                     family2 = gaussian(), data = df))
 #' jags_code(unm_mod)
 #'
 #' # ~~ Two Unmeasured Confounders Examples (III-Stage Model) ~~
@@ -292,17 +302,16 @@
 #' (unm_mod <- unm_glm(y ~ x + z + u1 + u2,
 #'                     u1 ~ x + z + u2,
 #'                     u2 ~ x + z,
+#'                     family1 = gaussian(),
 #'                     family2 = gaussian(),
 #'                     family3 = gaussian(), data = df))
 #' glm(y ~ x + z, data = df)
 #' coef(unm_mod)
-#' unm_summary(unm_mod)
-#' unm_summary(unm_mod, df) # true values known
-#' df
-#' unm_backfill(df, unm_mod)
+#'
 #' unm_glm(y ~ x + z + u1 + u2,
 #'         u1 ~ x + z + u2,
 #'         u2 ~ x + z,
+#'         family1 = gaussian(),
 #'         family2 = gaussian(),
 #'         family3 = gaussian(), data = df, code_only = TRUE)
 #'
@@ -323,9 +332,9 @@
 #' (unm_mod <- unm_glm(y ~ x + z + u1 + u2,
 #'                     u1 ~ x + z + u2,
 #'                     u2 ~ x + z,
+#'                     family1 = gaussian(),
 #'                     family2 = gaussian(),
 #'                     family3 = gaussian(), data = df))
-#' unm_backfill(df, unm_mod)
 #'
 #'
 #'
@@ -355,7 +364,7 @@
 
 unm_glm <- function(
     form1, form2 = NA, form3 = NA,
-    family1 = gaussian(), family2 = NA, family3 = NA,
+    family1 = binomial(), family2 = NA, family3 = NA,
     data,
     n.iter = 2000, n.adapt = 1000, thin = 10, n.chains = 4,
     filename = tempfile(fileext = ".jags"),
@@ -402,17 +411,17 @@ unm_glm <- function(
   if (missing(response_nuisance_priors)) {
 
     response_nuisance_priors <- switch(family1$family,
-      "gaussian" = g("tau_{y} ~ dt(0, 1, 3) I(0, )"),
-      "binomial" = " ",
-      "Gamma" = g("alpha_{y} ~ dgamma(.1, .1)"),
-      "poisson" = " "
+                                       "gaussian" = g("tau_{y} ~ dt(0, 1, 3) I(0, )"),
+                                       "binomial" = " ",
+                                       "Gamma" = g("alpha_{y} ~ dgamma(.1, .1)"),
+                                       "poisson" = " "
     )
 
     response_params_to_track <- switch(family1$family,
-      "gaussian" = g("tau_{y}"),
-      "binomial" = character(0),
-      "Gamma" = g("alpha_{y}"),
-      "poisson" = character(0)
+                                       "gaussian" = g("tau_{y}"),
+                                       "binomial" = character(0),
+                                       "Gamma" = g("alpha_{y}"),
+                                       "poisson" = character(0)
     )
 
   } else {
@@ -438,10 +447,10 @@ unm_glm <- function(
   if (missing(confounder1_nuisance_priors)) {
 
     confounder1_nuisance_priors <- switch(family2$family,
-                                           # "gaussian" = g("tau_{u1} <- 1 / ( sigma_{u1} * sigma_{u1} ); sigma_{u1} ~ dunif(0, 100)"),
-                                           "gaussian" = g("tau_{u1} ~ dt(0, 1, 3) I(0, )"),
-                                           "binomial" = " ",
-                                           "none" = ""
+                                          # "gaussian" = g("tau_{u1} <- 1 / ( sigma_{u1} * sigma_{u1} ); sigma_{u1} ~ dunif(0, 100)"),
+                                          "gaussian" = g("tau_{u1} ~ dt(0, 1, 3) I(0, )"),
+                                          "binomial" = " ",
+                                          "none" = ""
     )
 
     confounder1_params_to_track <- switch(family2$family,
@@ -468,10 +477,10 @@ unm_glm <- function(
   if (missing(confounder2_nuisance_priors)) {
 
     confounder2_nuisance_priors <- switch(family3$family,
-                                           # "gaussian" = g("tau_{u1} <- 1 / ( sigma_{u1} * sigma_{u1} ); sigma_{u1} ~ dunif(0, 100)"),
-                                           "gaussian" = g("tau_{u2} ~ dt(0, 1, 3) I(0, )"),
-                                           "binomial" = " ",
-                                           "none" = ""
+                                          # "gaussian" = g("tau_{u1} <- 1 / ( sigma_{u1} * sigma_{u1} ); sigma_{u1} ~ dunif(0, 100)"),
+                                          "gaussian" = g("tau_{u2} ~ dt(0, 1, 3) I(0, )"),
+                                          "binomial" = " ",
+                                          "none" = ""
     )
 
     confounder2_params_to_track <- switch(family3$family,
@@ -683,6 +692,8 @@ unm_glm <- function(
 
 
 
+#' @param mod The output of [unmconf::unm_glm()]
+#'
 #' @export
 #' @rdname unm_glm
 jags_code <- function(mod) {
@@ -691,12 +702,12 @@ jags_code <- function(mod) {
   invisible(mod)
 }
 
+
 #' @param x Object to be printed
 #' @param digits Number of digits to round to; defaults to 3
 #' @param print_call Should the call be printed? Defaults to `TRUE`, but can be
 #'   turned off with `options("unm_print_call" = FALSE)`
-#' @export
-#' @rdname unm_glm
+#' @noRd
 print.unm_int <- function(x, digits = 3, ...,
                           print_call = TRUE) { # print_call = getOption("unm_print_call")
 
@@ -755,96 +766,10 @@ print.unm_int <- function(x, digits = 3, ...,
 
 
 
-#' @param object Model object for which the coefficients are desired
-#' @export
-#' @rdname unm_glm
+
+#' @noRd
 coef.unm_int <- function(object, ...){
   summary <- summary(object, quantiles = numeric())
   summary$statistic[,1]
 }
-
-
-
-
-#' @export
-#' @rdname unm_glm
-unm_backfill <- function(data, mod) {
-
-  if(inherits(attr(mod, "form3"), "formula")) {
-    # get names
-    confounder1_name <- deparse(attr(mod, "form2")[[2]])
-    confounder2_name <- deparse(attr(mod, "form3")[[2]])
-
-    # grab data
-    u1 <- data[[confounder1_name]]
-    u2 <- data[[confounder2_name]]
-
-    # grab fitted things
-    fitted_u1 <- as.numeric(coef(attr(mod, "jm"))[["U"]][, 1])
-    fitted_u2 <- as.numeric(coef(attr(mod, "jm"))[["U"]][, 2])
-
-    if (length(fitted_u1) > 0) u1 <- apply(cbind(u1, fitted_u1), 1, sum, na.rm = TRUE)
-    if (length(fitted_u2) > 0) u2 <- apply(cbind(u2, fitted_u2), 1, sum, na.rm = TRUE)
-
-    if (length(fitted_u1) > 0) data[[confounder1_name]] <- u1
-    if (length(fitted_u2) > 0) data[[confounder2_name]] <- u2
-
-    if (length(fitted_u1) > 0) data[[paste0(confounder1_name, "_observed")]] <- is.na(fitted_u1)
-    if (length(fitted_u2) > 0) data[[paste0(confounder2_name, "_observed")]] <- is.na(fitted_u1)
-
-    data
-  }else {
-    # get names
-    confounder1_name <- deparse(attr(mod, "form2")[[2]])
-
-    # grab data
-    u1 <- data[[confounder1_name]]
-
-    # grab fitted things
-    fitted_u1 <- as.numeric(coef(attr(mod, "jm"))[["U"]][, 1])
-
-    if (length(fitted_u1) > 0) u1 <- apply(cbind(u1, fitted_u1), 1, sum, na.rm = TRUE)
-
-    if (length(fitted_u1) > 0) data[[confounder1_name]] <- u1
-
-    if (length(fitted_u1) > 0) data[[paste0(confounder1_name, "_observed")]] <- is.na(fitted_u1)
-
-    data
-  }
-
-  # # get names
-  # confounder1_name <- if(inherits(attr(mod, "form2"), "formula")) deparse(attr(mod, "form2")[[2]]) else NULL # e.g. "u1", character name of confounding var
-  # confounder2_name <- if(inherits(attr(mod, "form3"), "formula")) deparse(attr(mod, "form3")[[2]]) else NULL # e.g. "u2", character name of confounding var
-  #
-  # # grab data
-  # u1 <- data[[confounder1_name]]
-  # u2 <- data[[confounder2_name]]
-  #
-  # # grab fitted things
-  # fitted_u1 <- as.numeric(coef(attr(mod, "jm"))[["U"]][, 1])
-  # fitted_u2 <- as.numeric(coef(attr(mod, "jm"))[["U"]][, 2])
-  #
-  # if (length(fitted_u1) > 0) u1 <- apply(cbind(u1, fitted_u1), 1, sum, na.rm = TRUE)
-  # if (length(fitted_u2) > 0) u2 <- apply(cbind(u2, fitted_u2), 1, sum, na.rm = TRUE)
-  #
-  # if (length(fitted_u1) > 0) data[[confounder1_name]] <- u1
-  # if (length(fitted_u2) > 0) data[[confounder2_name]] <- u2
-  #
-  # if (length(fitted_u1) > 0) data[[paste0(confounder1_name, "_observed")]] <- is.na(fitted_u1)
-  # if (length(fitted_u2) > 0) data[[paste0(confounder2_name, "_observed")]] <- is.na(fitted_u1)
-  #
-  # data
-}
-
-
-#' @export
-#' @rdname unm_glm
-unm_dic <- function(mod) {
-  with(
-    attributes(mod),
-    dic.samples(jm, n.iter, thin, progress.bar = getOption("unm_progress.bar"))
-  )
-}
-
-
 
