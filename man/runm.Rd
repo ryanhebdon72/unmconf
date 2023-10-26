@@ -2,80 +2,57 @@
 % Please edit documentation in R/runm.R
 \name{runm}
 \alias{runm}
-\alias{runm_full}
-\alias{runm_int}
-\alias{runm_ext}
 \title{Generate synthetic data}
 \usage{
 runm(
   n,
-  response,
-  response_param = NULL,
-  response_model_coefs,
-  treatment_model_coefs,
-  covariate_fam_list,
-  covariate_param_list,
-  unmeasured_fam_list,
-  unmeasured_param_list,
   type = "int",
-  missing_prop = 0.8
-)
-
-runm_full(
-  n,
-  response,
-  response_param,
-  response_model_coefs,
-  treatment_model_coefs,
-  covariate_fam_list,
-  covariate_param_list,
-  unmeasured_fam_list,
-  unmeasured_param_list,
-  treatment = TRUE
-)
-
-runm_int(
-  n,
-  response,
-  response_param,
-  response_model_coefs,
-  treatment_model_coefs,
-  covariate_fam_list,
-  covariate_param_list,
-  unmeasured_fam_list,
-  unmeasured_param_list,
-  missing_prop
-)
-
-runm_ext(
-  n_main,
-  n_external,
-  response,
-  response_param,
-  response_model_coefs,
-  treatment_model_coefs,
-  covariate_fam_list,
-  covariate_param_list,
-  unmeasured_fam_list,
-  unmeasured_param_list
+  missing_prop = 0.8,
+  response = "bin",
+  response_param = NULL,
+  response_model_coefs = c(int = -1, z1 = 0.5, z2 = 0.5, z3 = 0.5, u1 = 0.5, x = 0.5),
+  treatment_model_coefs = c(int = -1, z1 = 0.5, z2 = 0.5, z3 = 0.5, u1 = 0.5),
+  covariate_fam_list = list("norm", "bin", "norm"),
+  covariate_param_list = list(c(mean = 0, sd = 1), prob = 0.3, c(0, 2)),
+  unmeasured_fam_list = list("norm"),
+  unmeasured_param_list = list(c(mean = 0, sd = 1))
 )
 }
 \arguments{
-\item{n}{Number of observations}
+\item{n}{Number of observations. When \code{type = "int"}, \code{n} is a vector of
+length 1. When \code{type = "ext"}, \code{n} can either be a vector of length 1 or 2.
+For the case when \code{n} is of length 2, \verb{n = (n_main, n_external)}, where
+\code{n_main} corresponds to the main study sample size and \code{n_external}
+corresponds to the external validation sample size. For the case when \code{n}
+is of length 1, \code{n} will be split evenly between main study and external
+validation observations, with the main study getting the additional
+observation when \code{n} is odd.}
 
-\item{response}{\code{"norm"}, \code{"bin"}, \code{"pois"}, or \code{"gam"}}
+\item{type}{Type of validation source. Can be \code{"int"} for internal validation
+or \code{"ext"} for external validation. Defaults to \code{"int"}.}
 
-\item{response_param}{Nuisance parameters for response type.}
+\item{missing_prop}{Proportion of missing values for internal validation
+scenario (i.e., when \code{type = "int"}).}
+
+\item{response}{\code{"norm"}, \code{"bin"}, \code{"pois"}, or \code{"gam"}. Defaults to \code{"bin"}.}
+
+\item{response_param}{Nuisance parameters for response type. For \code{"norm"},
+the default standard deviation is 1. For \code{"gam"}, the default shape
+parameter is 2. For \code{"pois"}, an offset variable is added to the dataset
+that is uniformly distributed from 1 to 10.}
 
 \item{response_model_coefs}{A named vector of coefficients to generate data
 from the response model. This must include an intercept (\verb{"int" = }), a
 coefficient for each covariate specified, a coefficient for each unmeasured
-confounder, and a treatment coefficient (\verb{"x" = }).}
+confounder, and a treatment coefficient (\verb{"x" = }). The coefficients for
+the covariates and treatment will be denoted with \code{"beta[.]"} and the
+unmeasured confounders with \code{"lambda[.]"}.}
 
 \item{treatment_model_coefs}{A named vector of coefficients to generate data
-from the treatment model. This must include an intercept (\verb{"int" =}), a
+from the treatment model. This must include an intercept (\verb{"int" = }), a
 coefficient for each covariate specified, and a coefficient for each
-unmeasured confounder.}
+unmeasured confounder. The coefficients for the covariates and unmeasured
+confounders will be denoted with \code{"eta[.]"}.}
 
 \item{covariate_fam_list}{A list of either \code{"norm"} or \code{"bin"}, where the
 length of the list matches the number of covariates in the model.}
@@ -91,31 +68,57 @@ model. This can be at most a length of 2 to pair with \code{\link[=unm_glm]{unm_
 \item{unmeasured_param_list}{A list of parameters for the respective
 distributions in \code{unmeasured_fam_list}, where the length of the list
 matches the length of \code{unmeasured_fam_list}.}
-
-\item{type}{\code{"int"} or \code{"ext"}}
-
-\item{missing_prop}{Proportion of missing values. Only used when \code{type = "int"}}
-
-\item{treatment}{Input documentation here.}
-
-\item{n_main}{Input documentation here.}
-
-\item{n_external}{Input documentation here.}
 }
 \value{
 A \code{tibble}
 }
 \description{
-\code{\link[=runm]{runm()}} generates customized synthetic data for use in examples of models
-with unmeasured confounders. Currently set up to have at most 2 unmeasured
-confounders to pair with \code{\link[=unm_glm]{unm_glm()}}.
+\code{\link[=runm]{runm()}} generates synthetic data for use of modeling with unmeasured
+confounders. Defaults to the case of one unmeasured confounder present and
+fixed parameter values. Can be customized. Currently set up to have at most
+two unmeasured confounders to pair with \code{\link[=unm_glm]{unm_glm()}}.
 }
 \examples{
 
+runm(100)
+runm(n = 100, type = "int", missing_prop = .75)
+runm(n = 100, type = "int", missing_prop = .75) |> attr("params")
+runm(100, type = "int", response = "norm")
+runm(100, type = "int", response = "norm") |> attr("params")
+runm(100, type = "int", response = "norm", response_param = 3) |> attr("params")
+runm(100, type = "int", response = "gam")
+runm(100, type = "int", response = "gam", response_param = 5) |> attr("params")
+runm(100, type = "int", missing_prop = .5, response = "pois")
+
+runm(n = 100, type = "ext")
+runm(n = 100, type = "ext") |> attr("params")
+runm(n = c(10, 10), type = "ext")
+runm(100, type = "ext", response = "norm")
+runm(100, type = "int", response = "norm", response_param = 3) |> attr("params")
+runm(100, type = "ext", response = "gam")
+runm(100, type = "ext", response = "pois")
+
 runm(
   n = 100,
+  type = "int",
+  missing_prop = .80,
   response = "norm",
-  response_param = c("si_y" = 1),
+  response_param = c("si_y" = 2),
+  response_model_coefs = c("int" = -1, "z" = .4,
+                           "u1" = .75, "u2" = .75, "x" = .75),
+  treatment_model_coefs = c("int" = -1, "z" = .4,
+                            "u1" = .75, "u2" = .75),
+  covariate_fam_list = list("norm"),
+  covariate_param_list = list(c(mean = 0, sd = 1)),
+  unmeasured_fam_list = list("norm", "bin"),
+  unmeasured_param_list = list(c(mean = 0, sd = 1), c(.3))
+)
+
+runm(
+  n = c(20, 30),
+  type = "ext",
+  response = "norm",
+  response_param = c("si_y" = 2),
   response_model_coefs = c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
                            "u1" = .75, "u2" = .75, "x" = .75),
   treatment_model_coefs = c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
@@ -123,8 +126,6 @@ runm(
   covariate_fam_list = list("norm", "bin", "norm"),
   covariate_param_list = list(c(mean = 0, sd = 1), c(.3), c(0, 2)),
   unmeasured_fam_list = list("norm", "bin"),
-  unmeasured_param_list = list(c(mean = 0, sd = 1), c(.3)),
-  type = "int",
-  missing_prop = .80
+  unmeasured_param_list = list(c(mean = 0, sd = 1), c(.3))
 )
 }

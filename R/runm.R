@@ -1,20 +1,38 @@
 #' Generate synthetic data
 #'
-#' [runm()] generates customized synthetic data for use in examples of models
-#' with unmeasured confounders. Currently set up to have at most 2 unmeasured
-#' confounders to pair with [unm_glm()].
+#' [runm()] generates synthetic data for use of modeling with unmeasured
+#' confounders. Defaults to the case of one unmeasured confounder present and
+#' fixed parameter values. Can be customized. Currently set up to have at most
+#' two unmeasured confounders to pair with [unm_glm()].
 #'
-#' @param n Number of observations
-#' @param response `"norm"`, `"bin"`, `"pois"`, or `"gam"`
-#' @param response_param Nuisance parameters for response type.
+#' @param n Number of observations. When `type = "int"`, `n` is a vector of
+#'   length 1. When `type = "ext"`, `n` can either be a vector of length 1 or 2.
+#'   For the case when `n` is of length 2, `n = (n_main, n_external)`, where
+#'   `n_main` corresponds to the main study sample size and `n_external`
+#'   corresponds to the external validation sample size. For the case when `n`
+#'   is of length 1, `n` will be split evenly between main study and external
+#'   validation observations, with the main study getting the additional
+#'   observation when `n` is odd.
+#' @param type Type of validation source. Can be `"int"` for internal validation
+#'   or `"ext"` for external validation. Defaults to `"int"`.
+#' @param missing_prop Proportion of missing values for internal validation
+#'   scenario (i.e., when `type = "int"`).
+#' @param response `"norm"`, `"bin"`, `"pois"`, or `"gam"`. Defaults to `"bin"`.
+#' @param response_param Nuisance parameters for response type. For `"norm"`,
+#'   the default standard deviation is 1. For `"gam"`, the default shape
+#'   parameter is 2. For `"pois"`, an offset variable is added to the dataset
+#'   that is uniformly distributed from 1 to 10.
 #' @param response_model_coefs A named vector of coefficients to generate data
 #'   from the response model. This must include an intercept (`"int" = `), a
 #'   coefficient for each covariate specified, a coefficient for each unmeasured
-#'   confounder, and a treatment coefficient (`"x" = `).
+#'   confounder, and a treatment coefficient (`"x" = `). The coefficients for
+#'   the covariates and treatment will be denoted with `"beta[.]"` and the
+#'   unmeasured confounders with `"lambda[.]"`.
 #' @param treatment_model_coefs A named vector of coefficients to generate data
-#'   from the treatment model. This must include an intercept (`"int" =`), a
+#'   from the treatment model. This must include an intercept (`"int" = `), a
 #'   coefficient for each covariate specified, and a coefficient for each
-#'   unmeasured confounder.
+#'   unmeasured confounder. The coefficients for the covariates and unmeasured
+#'   confounders will be denoted with `"eta[.]"`.
 #' @param covariate_fam_list A list of either `"norm"` or `"bin"`, where the
 #'   length of the list matches the number of covariates in the model.
 #' @param covariate_param_list A list of parameters for the respective
@@ -26,37 +44,51 @@
 #' @param unmeasured_param_list A list of parameters for the respective
 #'   distributions in `unmeasured_fam_list`, where the length of the list
 #'   matches the length of `unmeasured_fam_list`.
-#' @param type `"int"` or `"ext"`
-#' @param missing_prop Proportion of missing values. Only used when `type =
-#'   "int"`
-#' @param treatment Input documentation here.
-#' @param n_main Input documentation here.
-#' @param n_external Input documentation here.
+#'
 #' @return A `tibble`
+#'
 #' @name runm
 #' @examples
+#'
+#' runm(100)
+#' runm(n = 100, type = "int", missing_prop = .75)
+#' runm(n = 100, type = "int", missing_prop = .75) |> attr("params")
+#' runm(100, type = "int", response = "norm")
+#' runm(100, type = "int", response = "norm") |> attr("params")
+#' runm(100, type = "int", response = "norm", response_param = 3) |> attr("params")
+#' runm(100, type = "int", response = "gam")
+#' runm(100, type = "int", response = "gam", response_param = 5) |> attr("params")
+#' runm(100, type = "int", missing_prop = .5, response = "pois")
+#'
+#' runm(n = 100, type = "ext")
+#' runm(n = 100, type = "ext") |> attr("params")
+#' runm(n = c(10, 10), type = "ext")
+#' runm(100, type = "ext", response = "norm")
+#' runm(100, type = "int", response = "norm", response_param = 3) |> attr("params")
+#' runm(100, type = "ext", response = "gam")
+#' runm(100, type = "ext", response = "pois")
 #'
 #' runm(
 #'   n = 100,
 #'   type = "int",
 #'   missing_prop = .80,
 #'   response = "norm",
-#'   response_param = c("si_y" = 1),
-#'   response_model_coefs = c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
+#'   response_param = c("si_y" = 2),
+#'   response_model_coefs = c("int" = -1, "z" = .4,
 #'                            "u1" = .75, "u2" = .75, "x" = .75),
-#'   treatment_model_coefs = c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
+#'   treatment_model_coefs = c("int" = -1, "z" = .4,
 #'                             "u1" = .75, "u2" = .75),
-#'   covariate_fam_list = list("norm", "bin", "norm"),
-#'   covariate_param_list = list(c(mean = 0, sd = 1), c(.3), c(0, 2)),
+#'   covariate_fam_list = list("norm"),
+#'   covariate_param_list = list(c(mean = 0, sd = 1)),
 #'   unmeasured_fam_list = list("norm", "bin"),
 #'   unmeasured_param_list = list(c(mean = 0, sd = 1), c(.3))
 #' )
 #'
 #' runm(
-#'   n = 100,
+#'   n = c(20, 30),
 #'   type = "ext",
 #'   response = "norm",
-#'   response_param = c("si_y" = 1),
+#'   response_param = c("si_y" = 2),
 #'   response_model_coefs = c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
 #'                            "u1" = .75, "u2" = .75, "x" = .75),
 #'   treatment_model_coefs = c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
@@ -66,7 +98,6 @@
 #'   unmeasured_fam_list = list("norm", "bin"),
 #'   unmeasured_param_list = list(c(mean = 0, sd = 1), c(.3))
 #' )
-
 
 
 #' @rdname runm
@@ -75,11 +106,15 @@ runm <- function(
     n,
     type = "int",
     missing_prop = .80,
-    response, response_param = NULL,
-    response_model_coefs,
-    treatment_model_coefs,
-    covariate_fam_list, covariate_param_list,
-    unmeasured_fam_list, unmeasured_param_list
+    response = "bin", response_param = NULL,
+    response_model_coefs = c("int" = -1, "z1" = .5, "z2" = .5, "z3" = .5,
+                             "u1" = .5, "x" = .5),
+    treatment_model_coefs = c("int" = -1, "z1" = .5, "z2" = .5, "z3" = .5,
+                              "u1" = .5),
+    covariate_fam_list = list("norm", "bin", "norm"),
+    covariate_param_list = list(c(mean = 0, sd = 1), prob = .3, c(0, 2)),
+    unmeasured_fam_list = list("norm"),
+    unmeasured_param_list = list(c(mean = 0, sd = 1))
 ) {
   if (type == "int") {
 
@@ -107,9 +142,7 @@ runm <- function(
       }
 
     } else {
-
       stop(" externally validated data, `n` should be c(`n_main`, `n_external`).", call. = TRUE)
-
     }
 
     runm_ext(
@@ -120,11 +153,8 @@ runm <- function(
       covariate_fam_list, covariate_param_list,
       unmeasured_fam_list, unmeasured_param_list
     )
-
   } else {
-
     stop('`type` should be `"int"` or `"ext"`.', call. = FALSE)
-
   }
 
 }
@@ -132,7 +162,7 @@ runm <- function(
 
 
 
-#' @rdname runm
+#' @noRd
 runm_full <- function(
     n,
     response, response_param,
@@ -143,8 +173,8 @@ runm_full <- function(
     treatment = TRUE
 ) {
 
-  a <- covariate_fam_list #list("norm", "bin", "norm")
-  b <- covariate_param_list #list(c(mean = 0, sd = 1), c(.3), c(10, 2))
+  a <- covariate_fam_list
+  b <- covariate_param_list
   (covariate_df <- as.data.frame(
     Map(function(dist, param) {
       if(dist == "norm") {
@@ -160,8 +190,8 @@ runm_full <- function(
   )
 
 
-  a <- unmeasured_fam_list # list("norm", "bin")
-  b <- unmeasured_param_list # list(c(mean = 0, sd = 1), c(.3))
+  a <- unmeasured_fam_list
+  b <- unmeasured_param_list
   (unm_conf_df <- as.data.frame(
     Map(function(dist, param) {
       if(dist == "norm") {
@@ -178,15 +208,12 @@ runm_full <- function(
 
   df_combined <- cbind(covariate_df, unm_conf_df)
 
-  x_param_vec <- treatment_model_coefs # c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4, "u1" = .75, "u2" = .75)
+  x_param_vec <- treatment_model_coefs
   (length(x_param_vec) - 1) == ncol(df_combined)
-  names(df_combined) == names(x_param_vec)[-1]
+  names(df_combined) <- names(x_param_vec)[-1]
   vec_names <- names(x_param_vec)
   names(x_param_vec) <- sapply(vec_names, function(.) {
     glue::glue("et_{.}")
-    # if(grepl("z|nt", .)) {
-    #   glue::glue("ga_{.}")
-    # } else glue::glue("ze_{.}")
   })
   #make treatment
   if(treatment == TRUE) {
@@ -200,37 +227,49 @@ runm_full <- function(
   X <- model.matrix(~ ., data = df_combined)
 
   (length(response_model_coefs) - 1) == ncol(df_combined)
-  names(df_combined) == names(response_model_coefs)[-1]
+  names(df_combined) <- names(response_model_coefs)[-1]
   vec_names <- names(response_model_coefs)
   names(response_model_coefs) <- sapply(vec_names, function(.) {
     if(grepl("z|nt|x", .)) {
       glue::glue("be_{.}")
     } else glue::glue("la_{.}")
   })
-  be <- response_model_coefs # c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4, "u1" = .75, "u2" = .75, "x" = .75)
-
-  # c("be_1" = -1, "be_z" = .75, "la_u1" = .75, "la_u2" = .75, "be_x" = .75)
+  be <- response_model_coefs
   p_be <- length(be) # = # non-confounder params in response model
   # p_la <- length(la) # = # confounder params in response model
   (th <- be)
 
 
-  si_y <- if (response == "norm") c("si_y" = response_param) else NULL
-  if (response == "pois") df$t <- runif(n, 1, 10)
-  al_y <- if (response == "gam") c("al_y" = response_param) else NULL
+  (if (is.null(response_param)) {
+    nuis_param <- switch(response,
+                         "norm" = c("si_y" = 1),
+                         "gam" = c("al_y" = 2))
+  } else {
+    nuis_param <- switch(response,
+                         "norm" = c(response_param),
+                         "gam" = c(response_param)
+    )
+  })
+
+  names(nuis_param) <- switch(response,
+                              "norm" = "si_y",
+                              "gam" = "al_y"
+  )
+  if (response == "pois") df_combined$t <- runif(n, 1, 10)
 
   invlink_y <- switch(response,
                       "norm" = function(x) gaussian()$linkinv(as.numeric(x)),
                       "bin" = function(x) binomial()$linkinv(as.numeric(x)),
                       "pois" = function(x) poisson()$linkinv(as.numeric(x)),
-                      "gam" = function(x) Gamma(link = "log")$linkinv(as.numeric(x))
+                      "gam" = function(x) Gamma(link = "log")$linkinv(as.numeric(x)),
+                      stop()
   )
 
   resp <- switch(response,
-                 "norm" = function(n) rnorm(n, invlink_y(X %*% th), si_y),
+                 "norm" = function(n) rnorm(n, invlink_y(X %*% th), nuis_param),
                  "bin" = function(n) rbinom(n, 1, invlink_y(X %*% th)),
-                 "pois" = function(n) rpois(n, lambda = df$t * invlink_y(X %*% th)),
-                 "gam" = function(n) rgamma(n, shape = al_y, rate = al_y / invlink_y(X %*% th))
+                 "pois" = function(n) rpois(n, lambda = df_combined$t * invlink_y(X %*% th)),
+                 "gam" = function(n) rgamma(n, shape = nuis_param, rate = nuis_param / invlink_y(X %*% th))
   )
 
   df_combined$y <- resp(n)
@@ -238,8 +277,8 @@ runm_full <- function(
 
   # add metadata
   if(treatment == TRUE) {
-    params <- drop_nulls(c(et, be, si_y, al_y))
-  } else params <- drop_nulls(c(be, si_y, al_y))
+    params <- drop_nulls(c(et, be, nuis_param))
+  } else params <- drop_nulls(c(be, nuis_param))
   names(params) <- expand_labels(names(params))
   params
 
@@ -258,15 +297,15 @@ runm_full <- function(
 
 
 
-#' @rdname runm
+#' @noRd
 runm_int <- function(
     n,
+    missing_prop,
     response, response_param,
     response_model_coefs,
     treatment_model_coefs,
     covariate_fam_list, covariate_param_list,
-    unmeasured_fam_list, unmeasured_param_list,
-    missing_prop
+    unmeasured_fam_list, unmeasured_param_list
 ) {
 
   df <- runm_full(
@@ -291,7 +330,7 @@ runm_int <- function(
 
 
 
-#' @rdname runm
+#' @noRd
 runm_ext <- function(
     n_main, n_external,
     response, response_param,
