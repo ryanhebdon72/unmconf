@@ -9,39 +9,88 @@
 \usage{
 runm(
   n,
-  response = "norm",
-  confounder1 = "norm",
-  confounder2 = NA,
+  response,
+  response_param = NULL,
+  response_model_coefs,
+  treatment_model_coefs,
+  covariate_fam_list,
+  covariate_param_list,
+  unmeasured_fam_list,
+  unmeasured_param_list,
   type = "int",
   missing_prop = 0.8
 )
 
 runm_full(
   n,
-  response = "norm",
-  confounder1 = "norm",
-  confounder2 = NA,
+  response,
+  response_param,
+  response_model_coefs,
+  treatment_model_coefs,
+  covariate_fam_list,
+  covariate_param_list,
+  unmeasured_fam_list,
+  unmeasured_param_list,
   treatment = TRUE
 )
 
 runm_int(
   n,
-  response = "norm",
-  confounder1 = "norm",
-  confounder2 = NA,
+  response,
+  response_param,
+  response_model_coefs,
+  treatment_model_coefs,
+  covariate_fam_list,
+  covariate_param_list,
+  unmeasured_fam_list,
+  unmeasured_param_list,
   missing_prop
 )
 
-runm_ext(n_main, n_external, response, confounder1, confounder2)
+runm_ext(
+  n_main,
+  n_external,
+  response,
+  response_param,
+  response_model_coefs,
+  treatment_model_coefs,
+  covariate_fam_list,
+  covariate_param_list,
+  unmeasured_fam_list,
+  unmeasured_param_list
+)
 }
 \arguments{
 \item{n}{Number of observations}
 
 \item{response}{\code{"norm"}, \code{"bin"}, \code{"pois"}, or \code{"gam"}}
 
-\item{confounder1}{\code{"norm"} or \code{"bin"}}
+\item{response_param}{Nuisance parameters for response type.}
 
-\item{confounder2}{\code{"norm"} or \code{"bin"}}
+\item{response_model_coefs}{A named vector of coefficients to generate data
+from the response model. This must include an intercept (\verb{"int" = }), a
+coefficient for each covariate specified, a coefficient for each unmeasured
+confounder, and a treatment coefficient (\verb{"x" = }).}
+
+\item{treatment_model_coefs}{A named vector of coefficients to generate data
+from the treatment model. This must include an intercept (\verb{"int" =}), a
+coefficient for each covariate specified, and a coefficient for each
+unmeasured confounder.}
+
+\item{covariate_fam_list}{A list of either \code{"norm"} or \code{"bin"}, where the
+length of the list matches the number of covariates in the model.}
+
+\item{covariate_param_list}{A list of parameters for the respective
+distributions in \code{covariate_fam_list}, where the length of the list matches
+the length of \code{covariate_fam_list}.}
+
+\item{unmeasured_fam_list}{A list of either \code{"norm"} or \code{"bin"}, where the
+length of the list matches the number of unmeasured confounders in the
+model. This can be at most a length of 2 to pair with \code{\link[=unm_glm]{unm_glm()}}.}
+
+\item{unmeasured_param_list}{A list of parameters for the respective
+distributions in \code{unmeasured_fam_list}, where the length of the list
+matches the length of \code{unmeasured_fam_list}.}
 
 \item{type}{\code{"int"} or \code{"ext"}}
 
@@ -57,36 +106,25 @@ runm_ext(n_main, n_external, response, confounder1, confounder2)
 A \code{tibble}
 }
 \description{
-\code{\link[=runm]{runm()}} generates synthetic data for use in examples of models with
-unmeasured confounders (can take up to two unmeasured confounders). Defaults
-to one unmeasured confounder.
+\code{\link[=runm]{runm()}} generates customized synthetic data for use in examples of models
+with unmeasured confounders. Currently set up to have at most 2 unmeasured
+confounders to pair with \code{\link[=unm_glm]{unm_glm()}}.
 }
 \examples{
 
-# internally validated data
-runm(10)
-runm(10, missing_prop = .50)
-
-# different response distributions; look at y
-runm(10, response = "bin")
-runm(10, response = "pois")
-runm(10, response = "gam")
-
-# different confounder distributions; look at u1
-runm(10, response = "norm", confounder1 = "bin")
-runm(10, response =  "bin", confounder1 = "bin")
-runm(10, response = "pois", confounder1 = "bin", missing_prop = .7)
-runm(10, response = "gam", confounder1 = "bin", missing_prop = .7)
-
-# 2 confounders, u1 and u2
-runm(10, response = "norm", confounder1 = "bin", confounder2 = "norm")
-runm(10, response =  "bin", confounder1 = "bin", confounder2 = "norm")
-runm(10, response = "pois", confounder1 = "bin", confounder2 = "bin", missing_prop = .5)
-runm(10, response =  "gam", confounder1 = "bin", confounder2 = "bin", missing_prop = .5)
-
-# externally validated data
-runm(10, type = "int")
-runm(c(7,3), type = "ext")
-runm(c(7,3), response = "norm", confounder1 = "norm", type = "ext")
-runm(c(7,3), response = "norm", confounder1 = "bin", confounder2 = "norm", type = "ext")
+runm(
+  n = 100,
+  response = "norm",
+  response_param = c("si_y" = 1),
+  response_model_coefs = c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
+                           "u1" = .75, "u2" = .75, "x" = .75),
+  treatment_model_coefs = c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
+                            "u1" = .75, "u2" = .75),
+  covariate_fam_list = list("norm", "bin", "norm"),
+  covariate_param_list = list(c(mean = 0, sd = 1), c(.3), c(0, 2)),
+  unmeasured_fam_list = list("norm", "bin"),
+  unmeasured_param_list = list(c(mean = 0, sd = 1), c(.3)),
+  type = "int",
+  missing_prop = .80
+)
 }
