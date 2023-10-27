@@ -1,8 +1,8 @@
 ---
-title: "my-vignette"
+title: "How to Use the unmconf Package"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{my-vignette}
+  %\VignetteIndexEntry{How to Use the unmconf Package}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,6 +14,194 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
-library(unmconf)
+# Introduction
+
+`unmconf` is a package that employs a fully Bayesian hierarchical framework for modeling under the presence of unmeasured confounders using JAGS (Just Another Gibbs Sampler). Bayesian data analysis can be summarized in the following four steps: specifying the data model and prior, estimating model parameters, evaluating sampling quality and model fit, and summarizing and interpreting results. However, for users new to Markov Chain Monte Carlo (MCMC) software who wish to implement models involving unmeasured confounding, challenges arise in regard to understanding the syntax and how these programs handle missing data. The primary objective of `unmconf` is to address these challenges by creating a function that resembles `glm()` on the front end, while seamlessly implementing the necessary JAGS code on the back end. Functions are implemented to simplify the workflow using this model by acquiring data, modeling data, conducting diagnostics testing on the model, and analyzing results. With this package, users can perform robust fully Bayesian analyses, even without previous familiarity with JAGS syntax or data processing intricacies.
+
+## Bayesian Multi-Staged Regression Model
+
+For the statistical model, we denote the continuous, discrete, or dichotomous outcome as $Y$, the dichotomous main exposure variable as $X$, the $p \times 1$ vector of perfectly observed covariates relating to both $Y$ and $X$ is denoted $C$, and the unmeasured confounder(s) relating to both $Y$ and $X$ are denoted $U_j, j = 1, 2$. These unmeasured confounders can be either binary or normally distributed. Consider the case where $j = 2$. Then,
+
+```{=tex}
+\begin{equation}
+\begin{split}
+    y|x, u, z & \sim D(g^{-1}({\beta}'\textbf{C} + {\lambda}'\textbf{U}), \xi_y) \\
+    u_1|x, z & \sim D(g^{-1}({\gamma}'\textbf{C} + \zeta U_2), \xi_{u_1}) \\
+    u_2|x, z & \sim D(g^{-1}({\delta}'\textbf{C}), \xi_{u_2}),
+\end{split}
+\end{equation}
 ```
+
+where \textbf{C} denotes the design matrix comprised of the main exposure variable, $X$, and all of the perfectly observed covariates. This model is completed by the specification of a link function, $g$, for some distribution, $D$. Additional parameters for certain distributions are denoted by $\xi_y$ and $\xi_u$. Examples of these would be $\sigma^2$ for the variance of a normal distribution or $\alpha$ for the shape parameter in the gamma distribution. The package `unmconf` allows for the user to work with a response from the normal, Poisson, gamma, or binomial distribution and unmeasured confounder(s) from the normal or binomial distribution. The package supports identity (normal), log (Poisson or gamma), and logit (Bernoulli) link functions.
+
+
+### Prior Structure
+
+Prior distributions for the model parameters will be jointly defined as ${\pi}({\theta})$, where $\theta = (\beta, \lambda, \gamma, \zeta, \delta)$. The default prior structure is weakly informative. When the response is binary or Poisson, the regression coefficients have a normal prior with a mean of 0 and precision of 0.1. When the response is either normal or gamma, the regression coefficients have a normal prior with a mean of 0 and precision of 0.001. Depending on the family specified for the response and/or unmeasured confounder(s), nuisance parameters may be present and, thus, will also require a prior distribution. The precision for a normal response or normal unmeasured confounder will have a half Student's t-distribution with 3 degrees of freedom as the prior. The nuisance parameter, $\alpha_y$, for a gamma response has a gamma distribution as the prior with both scale and rate set to 0.1. The aforementioned nuisance parameters are tracked and posterior summaries are provided as a default setting in the package, but this can be modified.
+
+# Generating Data
+
+The function `runm()` is used to generate the data. In the workflow of this package, this function is not required to use if the data is already collected. The perfectly measured covariates and unmeasured confounder(s) are generated independently of one another. The user can specify these variables' families and their respective distributions as named lists in `runm()`. Then, the data frame will be generated using the named vector of response model coefficients, $\boldsymbol{\beta}_R$, and treatment model coefficients, $\boldsymbol{\eta}_T$, that the user provides in the function. `runm()` will model the following:
+
+```{=tex}
+\begin{equation}
+\begin{split}
+z_i & \sim D_{z_i}(g^{-1}(\theta_{z_i})) \\
+u_i & \sim D_{u_i}(g^{-1}(\theta_{u_i})) \\
+x | z_i, u_i & \sim D_x(g^{-1}(\textbf{C}\boldsymbol{\eta}_T)) \\ 
+y | x, z_i, u_i & \sim D_y(g^{-1}(\textbf{X}\boldsymbol{\beta}_R), \xi_y),
+\end{split}
+\end{equation}
+```
+
+where \textbf{C} is a design matrix consisting of perfectly measured covariates and unmeasured confounder(s) and \textbf{X} is a design matrix of the treatment, covariates, and unmeasured confounder(s). 
+
+All arguments in `runm()` have a default value assigned other than $n$. So, in its simplest form, one can generate a data set consisting of 100 observations by calling `runm(100)`. The default arguments can be customized to the user's preference if there is a desired data generation structure. A more detailed example is below, assigned `df`, and will be the data frame used throughout the remainder of this vignette.
+
+```{r, message=FALSE}
+library("unmconf")
+library("bayesplot")
+library("ggplot2"); theme_set(theme_minimal())
+```
+
+
+```{r}
+set.seed(13L)
+df <- 
+  runm(n = 100,
+       type = "int", 
+       missing_prop = .75,
+       covariate_fam_list = list("norm", "bin", "norm"),
+       covariate_param_list = list(c(mean = 0, sd = 1), c(.3), c(0, 2)),
+       unmeasured_fam_list = list("norm", "bin"),
+       unmeasured_param_list = list(c(mean = 0, sd = 1), c(.3)),
+       treatment_model_coefs = 
+         c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4, 
+           "u1" = .75, "u2" = .75),
+       response_model_coefs =
+         c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
+           "u1" = .75, "u2" = .75, "x" = .75),
+       response = "norm",
+       response_param = c("si_y" = 1))
+
+rbind(head(df, 5), tail(df, 5))
+```
+
+
+When the validation type is internal, the data will first be generated from some sample size `n`. Then, the proportion in `missing_prop` will set that percentage of the unmeasured confounder's observations to `NA`. For external validation, the sample size argument can be a vector of length 2 to represent the number of observations in the main study data and external validation data, respectively. The sample size argument can also be of length 1, where the sample size will be split in half for the two types of data (main study data will obtain the additional observation if `n` is odd). The main study data is generated in the same fashion as internal validation data, but all observations for unmeasured confounder(s) are missing. The external validation data is representative of the subjects in the control group, so the treatment variable, $x$ is set to 0 as well as its coefficient in the response model.
+
+# Specifying and Fitting the Model
+
+The main focus of this vignette should be around `unm_glm()`, which fits the posterior results of a hierarchical model that accounts for unmeasured confounder(s) through MCMC iterations. Upon acquiring all the relevant information, the `unm_glm()` function carries out two main tasks. Initially, it constructs a JAGS model and subsequently pre-processes the data for utilization by JAGS. This simplifies the process of performing a fully Bayesian analysis, as it spares users from the necessity of being familiar with JAGS syntax for both the model and data processing. The primary aim of the `unmconf` package, akin to `rstanarm` and `brms`, is to offer a user-friendly interface for Bayesian analysis, utilizing programming techniques familiar to R users. Users can input model information into `unm_glm()` in a similar manner as they would for the standard `stats::glm()` function, providing arguments like `formula`, `family`, and `data`.
+
+The R language provides a straightforward syntax for denoting linear models, typically written as `response ~ terms`, where the coefficients are implicitly represented. Like other R functions for model fitting, users have the option to use the `. - {vars}` syntax instead of listing all predictors. For instance, if the user wants to model the first unmeasured confounder, `smoking`, given predictors `age, weight, height,` and `salary`, they can use either `form2 = smoking ~ age + weight + height + salary` or `form2 = smoking ~ . - {response varaible}`. To estimate the unmeasured confounder(s), we often model them conditioned on some or all of the perfectly measured covariates and the treatment. Once estimated, these unmeasured confounder(s) become predictors in the higher stages of the model structure. On the right-hand side of the `~`, we define the linear combination of predictors that models the response variable. Additionally, the predictors can include polynomial regression (e.g.`~ poly(z, 2)`) and interactive effects (e.g.`~x*z`).
+
+<!-- The left-hand side of the `~` designates the variable to be modeled in each level of the hierarchical model.  -->
+<!-- For instance, the code `y ~ x` denotes the linear relationship $y = \beta_0 + \beta_1 x$. The arguments `form1, form2`, and `form3` of `unmconf` are similar to `formula` in `stats::glm()`. -->
+
+<!-- The arguments `family1, family2`, and `family3` are the family arguments for `form1, form2`, and `form3`, respectively. These family arguments should be specified as family functions. The options for `family1` are `gaussian(), binomial(), poisson()`, and `gamma()`. For `family2` and `family3`, you have the options of `gaussian()` and `binomial()`. Furthermore, the package supports the following link functions for the respective families: identity (normal), log (Poisson or gamma), and logit (binomial).  -->
+
+To further customize the analysis, users can specify custom priors using the priors argument within `unm_glm()`. The format for specifying custom priors is `c("\{parameter\}[\{covariate\}]" = "\{distribution\}")`. If the user does not pre-specify informative prior distributions in the function call, the default priors mentioned previously will be used on the model parameters. Additionally, `unm_glm()` also accepts arguments that facilitate MCMC computation on the posterior distribution to be passed to `coda.samples`, such as such as `n.iter, n.adapt, thin,` and `n.chains`. The arguments specified have default values, but the user is encouraged to supply their own values given the lack of convergence that is sometimes observed when validation sample sizes are small or priors are particularly diffuse.
+
+
+For instance, consider the three-level hierarchical model from the generated data set above, `df`, with a normal response, normal first unmeasured confounder, binary second unmeasured confounder, and three perfectly observed covariates. Further, let's say that, through expert opinion, we have prior information that the effect on $y$ from $u_1$, $\lambda_{u_1}$, is normally distributed with a mean of 0.5 and standard deviation of 1. JAGS parameterizes the normal distribution with precision over standard deviation, so we would use $\tau_{u_1} = 1 / \sigma_{u_1}^2 = 1$ for the prior distribution $\lambda_{u_1} \sim N(.5, \sigma_{u_1} = .5)$. Using `unm_glm()`, we fit:
+
+```{r}
+unm_mod <- 
+  unm_glm(y ~ x + z1 + z2 + z3 + u1 + u2,     # y ~ .,
+          u1 ~ x + z1 + z2 + z3 + u2,         # u1 ~ . - y,
+          u2 ~ x + z1 + z2 + z3,              # u2 ~ . - y - u1,
+          family1 = gaussian(),
+          family2 = gaussian(),
+          family3 = binomial(),
+          priors = c("lambda[u1]" = "dnorm(.5, 1)"),
+          n.iter = 4000, n.adapt = 2000, thin = 1,
+          data = df)
+```
+
+By leveraging `unm_glm()`, users can conveniently implement complex Bayesian models, particularly those involving unmeasured confounders, without grappling with the intricacies of JAGS syntax or handling missing data. The three-stage Bayesian modeling structure of `unmconf` is currently set up to work with at most two unmeasured confounders. Instances may arise where the user may want to work with more than two unmeasured confounders. As an attempt to resolve this concern, the user can explicitly call the JAGS code that `unm_glm()` generates either through the argument `code_only = TRUE` in the function itself or through the separate function, `jags_code()`. With a starting point created by the three-stage model, the user should be able to identify the syntax for JAGS code and thus add the layer(s) to the hierarchical structure and the respective prior distribution(s). Stopping at two unmeasured confounders allows for the package to run with confidence in the instance that individuals do not check for convergence and report the results of a poor model. Below shows both ways to extract a model's JAGS code.
+
+```{r, eval=FALSE}
+unm_glm(..., code_only = TRUE)
+jags_code(unm_mod)
+```
+
+# Evaluate Convergence and Model Fit
+
+After the model is fit and before using the MCMC samples for inference, it is necessary for users assess whether the chains have converged appropriately. Hierarchical models with unmeasured confounding are often confronted with convergence issues. To aid in chain convergence, we heavily increased the burn-in length and MCMC iterations from the default values of 1000 and 2000 in the function `unm_glm()` to 6000 and 10000, respectively. Additional checks include the posterior kernel density plots appearing relatively smooth in shape and the trace, or history, plots of the chains should have very similar values across the iterations (i.e., they "mix" well and the chains intermingle).
+
+<!-- [@gabry2019] -->
+The `bayesplot` package provides a variety of `ggplot2`-based plotting functions for use after fitting Bayesian models. `bayesplot::mcmc_hist()` plots a histogram of the MCMC draws from all chains, and `bayesplot::mcmc_trace()` performs a trace plot of the chains. Given that $\beta_X$ is our parameter of interest, we only displayed the density and trace plots of this parameter below. The histogram appears smooth and without any jaggedness. The trace plot appears to mix well, as one cannot differentiate or identify patterns in the chains across the iterations for this model. Thus, there is no lack of convergence evident here. All parameters in the model upheld convergence standards. 
+
+```{r}
+mcmc_hist(unm_mod, pars = "beta[x]")
+mcmc_trace(unm_mod, pars = "beta[x]")
+```
+
+
+```{r, echo=FALSE}
+# df2 <-
+#   runm_extended(n = 100,
+#                 covariate_fam_list = list("norm", "bin", "norm"),
+#                 covariate_param_list = list(c(mean = 0, sd = 1), c(.3), c(0, 2)),
+#                 unmeasured_fam_list = list("norm", "bin"),
+#                 unmeasured_param_list = list(c(mean = 0, sd = 1), c(.3)),
+#                 treatment_model_coefs =
+#                   c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
+#                     "u1" = .75, "u2" = .75),
+#                 response_model_coefs =
+#                   c("int" = -1, "z1" = .4, "z2" = .5, "z3" = .4,
+#                     "u1" = .75, "u2" = .75, "x" = .75),
+#                 response = "norm",
+#                 response_param = c("si_y" = 1),
+#                 type = "int",
+#                 missing_prop = .99)
+# 
+# unm_mod2 <-
+#   unm_glm(y ~ x + z1 + z2 + z3 + u1 + u2,     # y ~ .,
+#           u1 ~ x + z1 + z2 + z3 + u2,         # u1 ~ . - y,
+#           u2 ~ x + z1 + z2 + z3,              # u2 ~ . - y - u1,
+#           family1 = gaussian(),
+#           family2 = gaussian(),
+#           family3 = binomial(),
+#           #priors = c("lambda[u1]" = "dnorm(0, 4)"),
+#           n.iter = 4000, n.adapt = 2000, thin = 1,
+#           data = df2)
+# 
+# write_rds(unm_mod2, "/Users/ryanhebdon/Graduate School/Research/unmconf_personal/Diagnostics/bad_convergence.rds")
+
+#bad_mod <- readRDS("/Users/ryanhebdon/Graduate School/Research/unmconf_personal/Diagnostics/bad_convergence.rds")
+```
+
+
+# Summarizing Results
+
+Once the posterior samples have been computed, the `unm_glm()` function returns an R object as a list of the posterior samples, where the length of the list matches the number of chains. Calling the returned object explicitly, in our example `unm_mod`, will output the model's call and a named vector of coefficients at each level of the multi-staged model. A more formal model summary comes through `unm_summary()`, which obtains and prints a summary table of the results. Every parameter is summarized by the mean of the posterior distribution along with its two-sided 95% credible intervals based on quantiles. When generating a data set via `runm()`, adding the `data` argument appends a column to the summary table consisting of the true parameter values that were assigned.
+
+```{r}
+unm_summary(unm_mod, df) |>
+  head(10)
+```
+
+For model comparison, the deviance information criterion (DIC) and penalized expected deviance are provided through `unm_dic()`. DIC, a Bayesian version of AIC, is calculated by adding the "effective number of parameters" to the expected deviance and is computed through a wrapper around `rjags::dic_samples()`.
+
+ <!-- [@spiegelhalter2002] [@plummer2008] -->
+
+As mentioned above, unmeasured confounders can be considered as parameters in the Bayesian paradigm and are therefore estimated when performing MCMC. Yet, `unm_summary()` does not track the estimate of these "parameters" from the model fit. For this, `unm_backfill()` pairs with the original data set to impute the missing values for the unmeasured confounders with the posterior estimates. The ten observations below come from `df`, where five of the unmeasured confounders are observed and five are unobserved in the internal validation data. Columns `u1_observed` and `u2_observed` are logical variables added to the original data frame to display which variables were originally observed versus imputed. Additionally, the values of `u1` and `u2` that respectively have `FALSE` in the previously mentioned columns are the imputed posterior estimates.
+
+```{r}
+unm_backfill(df, unm_mod)[16:25, ]
+```
+
+To visualize the results from the model fit, the quantile-based posterior credible intervals can be drawn using `bayesplot::mcmc_intervals()`. A credible interval plot from the worked example is below. This plots the credible intervals for all parameters from the posterior draws of all the chains. We modify the default setting for the outer credible interval to be 0.95 for comparison with the output results from `unm_summary()`. The light blue circle in the middle of each parameter's interval portrays the posterior median. The bold, dark blue line displays the 50% credible interval and the thin, blue line covers the 95% credible interval. For simulation studies, where the true parameter values are known, calling the argument `true_params` will add a layer of light red circles to each credible interval to illustrate the true value used to generate the data. Here, the gamma and delta parameters do not have a true value because we generated the unmeasured confounders $u_1$ and $u_2$ as independent normal/Bernoulli random variables.
+
+```{r, message=FALSE, warning=FALSE}
+mcmc_intervals(unm_mod, prob_outer = .95, regex_pars = "(beta|lambda|gamma|delta|zeta).+") +
+  geom_point(
+    aes(value, name), data = tibble::enframe(attr(df, "params")) |>
+      dplyr::mutate(name = gsub("int", "1", name)),
+    color = "red", fill = "pink", size = 4, shape = 21
+  )
+```
+
+

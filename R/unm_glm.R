@@ -223,7 +223,7 @@
 #'
 #' # the output of unm_glm() is classed jags output
 #' (df <- runm(20, response = "norm"))
-#' (unm_mod <- unm_glm(y ~ ., u1 ~ . - y, family2 = gaussian(), data = df))
+#' (unm_mod <- unm_glm(y ~ ., u1 ~ . - y, family1 = gaussian(), family2 = gaussian(), data = df))
 #' class(unm_mod)
 #' jags_code(unm_mod)
 #' unm_glm(y ~ ., u1 ~ . - y, data = df, code_only = TRUE)
@@ -366,18 +366,26 @@ unm_glm <- function(
     form1, form2 = NA, form3 = NA,
     family1 = binomial(), family2 = NA, family3 = NA,
     data,
-    n.iter = 2000, n.adapt = 1000, thin = 10, n.chains = 4,
+    n.iter = 2000, n.adapt = 1000, thin = 1, n.chains = 4,
     filename = tempfile(fileext = ".jags"),
     quiet = getOption("unm_quiet"),
     progress.bar = getOption("unm_progress.bar"),
     code_only = FALSE,
-    default_prior = "dnorm(0, .1)",
+    default_prior = NULL,
     priors,
     response_nuisance_priors, response_params_to_track,
     confounder1_nuisance_priors, confounder1_params_to_track,
     confounder2_nuisance_priors, confounder2_params_to_track,
     ...
 ) {
+
+  if (is.null(default_prior)) {
+    default_prior <- switch(family1$family,
+                            "gaussian" = "dnorm(0, .001)",
+                            "binomial" = "dnorm(0, .1)",
+                            "Gamma" = "dnorm(0, .001)",
+                            "poisson" = "dnorm(0, .1)")
+  }
 
   g <- glue::glue
 
@@ -707,9 +715,10 @@ jags_code <- function(mod) {
 #' @param digits Number of digits to round to; defaults to 3
 #' @param print_call Should the call be printed? Defaults to `TRUE`, but can be
 #'   turned off with `options("unm_print_call" = FALSE)`
-#' @noRd
+#' @export
+#' @rdname unm_glm
 print.unm_int <- function(x, digits = 3, ...,
-                          print_call = TRUE) { # print_call = getOption("unm_print_call")
+                          print_call = getOption("unm_print_call")) { #
 
   # print the call
   call <- attr(x, 'call')
@@ -719,9 +728,9 @@ print.unm_int <- function(x, digits = 3, ...,
     cat("Call:\n")
     cat("", call[[1]], "(\n", sep = "")
     for (k in 2:(n-1)) {
-      cat("  ", glue("{names(call)[k]} = {deparse(call[[k]])},"), "\n")
+      cat("  ", glue::glue("{names(call)[k]} = {deparse(call[[k]])},"), "\n")
     }
-    cat("  ", glue("{names(call)[n]} = {deparse(call[[n]])}"), "\n")
+    cat("  ", glue::glue("{names(call)[n]} = {deparse(call[[n]])}"), "\n")
     cat(")\n")
     cat("\n")
   }
@@ -766,8 +775,9 @@ print.unm_int <- function(x, digits = 3, ...,
 
 
 
-
-#' @noRd
+#' @param object Model object for which the coefficients are desired
+#' @export
+#' @rdname unm_glm
 coef.unm_int <- function(object, ...){
   summary <- summary(object, quantiles = numeric())
   summary$statistic[,1]

@@ -5,6 +5,7 @@
 \alias{expand_labels}
 \alias{greek_expander}
 \alias{make_greek_coefs}
+\alias{drop_nulls}
 \title{Convert to Greek expressions}
 \usage{
 expand_labels(labs)
@@ -12,16 +13,20 @@ expand_labels(labs)
 greek_expander(s)
 
 make_greek_coefs(mod)
+
+drop_nulls(x)
 }
 \arguments{
-\item{labs}{A character vector of greek symbols of the form \code{ga_x} and \code{be_1}}
+\item{labs}{A character vector of greek symbols of the form \code{ga_x} and \code{be_1}.}
 
-\item{s}{A character vector of Greek short hand codes, e.g. \code{"si"}}
+\item{s}{A character vector of Greek short hand codes, e.g. \code{"si"}.}
 
 \item{mod}{Output from \code{\link[=unm_glm]{unm_glm()}}.}
+
+\item{x}{Character vector.}
 }
 \value{
-A character vector
+A character vector.
 }
 \description{
 Convert to Greek expressions for plotting

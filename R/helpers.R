@@ -2,10 +2,10 @@
 #'
 #' Convert to Greek expressions for plotting
 #'
-#' @param labs A character vector of greek symbols of the form `ga_x` and `be_1`
-#' @param s A character vector of Greek short hand codes, e.g. `"si"`
+#' @param labs A character vector of greek symbols of the form `ga_x` and `be_1`.
+#' @param s A character vector of Greek short hand codes, e.g. `"si"`.
 #' @param mod Output from [unm_glm()].
-#' @return A character vector
+#' @return A character vector.
 #' @name helpers
 #' @examples
 #'
@@ -100,8 +100,9 @@ ez_extract_subset <- function(string) {
 
 
 
-
-
+#' @param x Character vector.
+#' @rdname helpers
+#' @export
 drop_nulls <- function(x) {
   x[vapply(x, function(.) !is.null(.), logical(1))]
 }

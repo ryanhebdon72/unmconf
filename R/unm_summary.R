@@ -122,7 +122,7 @@
 
 
 #' @export
-#' @rdname unm_glm
+#' @rdname unm_summary
 unm_summary <- function(mod, data, quantiles = c(.025, .975)) {
 
   param <- NULL; rm(param)
