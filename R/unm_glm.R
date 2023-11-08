@@ -49,12 +49,18 @@
 #'
 #' # ~~ One Unmeasured Confounder Examples (II-Stage Model) ~~
 #'
+#'
 #' # normal response, normal confounder model with internally validated data
 #' (df <- runm(20, response = "norm"))
-#' (unm_mod <- unm_glm(y ~ x + z1 + z2 + z3 + u1,
-#'                     u1 ~ x + z1 + z2 + z3,
-#'                     family1 = gaussian(),
-#'                     family2 = gaussian(), data = df))
+#'
+#' (unm_mod <- unm_glm(
+#'   y ~ x + z1 + z2 + z3 + u1,  family1 = gaussian(),
+#'   u1 ~ x + z1 + z2 + z3,      family2 = gaussian(),
+#'   data = df
+#' ))
+#'
+#' \dontrun{ # reduce cran check time
+#'
 #' (unm_mod <- unm_glm(y ~ .,
 #'                     u1 ~ . - y,
 #'                     family1 = gaussian(),
@@ -280,10 +286,13 @@
 #' df$ht <- df$y
 #' df$age <- df$u1
 #' df$biom <- df$x
-#' (unm_mod <- unm_glm(ht ~ x + biom + age,
-#'                     age ~ x + biom,
-#'                     family1 = gaussian(),
-#'                     family2 = gaussian(), data = df))
+#' (unm_mod <- unm_glm(
+#'   ht ~ x + biom + age,
+#'   age ~ x + biom,
+#'   data = df,
+#'   family1 = gaussian(),
+#'   family2 = gaussian()
+#' ))
 #' jags_code(unm_mod)
 #'
 #' # ~~ Two Unmeasured Confounders Examples (III-Stage Model) ~~
@@ -353,6 +362,10 @@
 #'         u1 ~ x + z + u2, family2 = binomial(),
 #'         u2 ~ x + z, family3 = binomial(),
 #'         data = df, code_only = TRUE)
+#'
+#'
+#' }
+#'
 
 
 
@@ -405,14 +418,14 @@ unm_glm <- function(
   response_model_code <- switch(family1$family,
                                 "gaussian" = g("{y}[i] ~ dnorm(mu_{y}[i], tau_{y})
 {'    '}mu_{y}[i] <- inprod(X[i,], beta) {conf_piece}"),
-                                "binomial" = g("{y}[i] ~ dbern(p_{y}[i])
+"binomial" = g("{y}[i] ~ dbern(p_{y}[i])
 {'    '}logit(p_{y}[i]) <- inprod(X[i,], beta) {conf_piece}"),
-                                # note: r parameterizes the gamma as shape al and rate la, with mean = al / la
-                                #    jags parameterizes the gamma as shape  r and rate la, with mean =  r / la, the same
-                                "Gamma" = g("{y}[i] ~ dgamma(alpha_{y}, d[i])
+# note: r parameterizes the gamma as shape al and rate la, with mean = al / la
+#    jags parameterizes the gamma as shape  r and rate la, with mean =  r / la, the same
+"Gamma" = g("{y}[i] ~ dgamma(alpha_{y}, d[i])
 {'    '}d[i] <- alpha_{y} / mu_{y}[i]
 {'    '}log(mu_{y}[i]) <- inprod(X[i,], beta) {conf_piece}"),
-                                "poisson" = g("{y}[i] ~ dpois(mu_{y}[i])
+"poisson" = g("{y}[i] ~ dpois(mu_{y}[i])
 {'    '}log(mu_{y}[i]) <- log_e[i] + inprod(X[i,], beta) {conf_piece}"))
 
 
@@ -448,9 +461,9 @@ unm_glm <- function(
   confounder1_model_code <- switch(family2$family,
                                    "gaussian" = g("U[i,1] ~ dnorm(mu_{u1}[i], tau_{u1})
                    {'    '}mu_{u1}[i] <- inprod(W[i,], gamma) {conf2_piece}"),
-                                   "binomial" = g("U[i,1] ~ dbern(p_{u1}[i])
+                   "binomial" = g("U[i,1] ~ dbern(p_{u1}[i])
                    {'    '}logit(p_{u1}[i]) <- inprod(W[i,], gamma) {conf2_piece}"),
-                                   "none" = "")
+                   "none" = "")
 
   if (missing(confounder1_nuisance_priors)) {
 
@@ -478,9 +491,9 @@ unm_glm <- function(
   confounder2_model_code <- switch(family3$family,
                                    "gaussian" = g("U[i,2] ~ dnorm(mu_{u2}[i], tau_{u2})
                  {'    '}mu_{u2}[i] <- inprod(V[i,], delta)"),
-                                   "binomial" = g("U[i,2] ~ dbern(p_{u2}[i])
+                 "binomial" = g("U[i,2] ~ dbern(p_{u2}[i])
                  {'    '}logit(p_{u2}[i]) <- inprod(V[i,], delta)"),
-                                   "none" = "")
+                 "none" = "")
 
   if (missing(confounder2_nuisance_priors)) {
 

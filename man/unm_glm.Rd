@@ -115,12 +115,18 @@ as MCMC iterations.
 
 # ~~ One Unmeasured Confounder Examples (II-Stage Model) ~~
 
+
 # normal response, normal confounder model with internally validated data
 (df <- runm(20, response = "norm"))
-(unm_mod <- unm_glm(y ~ x + z1 + z2 + z3 + u1,
-                    u1 ~ x + z1 + z2 + z3,
-                    family1 = gaussian(),
-                    family2 = gaussian(), data = df))
+
+(unm_mod <- unm_glm(
+  y ~ x + z1 + z2 + z3 + u1,  family1 = gaussian(),
+  u1 ~ x + z1 + z2 + z3,      family2 = gaussian(),
+  data = df
+))
+
+\dontrun{ # reduce cran check time
+
 (unm_mod <- unm_glm(y ~ .,
                     u1 ~ . - y,
                     family1 = gaussian(),
@@ -346,10 +352,13 @@ samps$`.draw`
 df$ht <- df$y
 df$age <- df$u1
 df$biom <- df$x
-(unm_mod <- unm_glm(ht ~ x + biom + age,
-                    age ~ x + biom,
-                    family1 = gaussian(),
-                    family2 = gaussian(), data = df))
+(unm_mod <- unm_glm(
+  ht ~ x + biom + age,
+  age ~ x + biom,
+  data = df,
+  family1 = gaussian(),
+  family2 = gaussian()
+))
 jags_code(unm_mod)
 
 # ~~ Two Unmeasured Confounders Examples (III-Stage Model) ~~
@@ -419,6 +428,10 @@ unm_glm(y ~ x + z + u1 + u2, family1 = binomial(),
         u1 ~ x + z + u2, family2 = binomial(),
         u2 ~ x + z, family3 = binomial(),
         data = df, code_only = TRUE)
+
+
+}
+
 }
 \seealso{
 \code{\link[=runm]{runm()}}, \code{\link[rjags:dic.samples]{rjags::dic.samples()}}
