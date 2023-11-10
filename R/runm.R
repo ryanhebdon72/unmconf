@@ -173,6 +173,35 @@ runm_full <- function(
     treatment = TRUE
 ) {
 
+  if (length(covariate_fam_list) != length(covariate_param_list)) {
+    stop("`covariate_fam_list` and `covariate_param_list` must have same length.")
+  }
+
+  if (length(unmeasured_fam_list) != length(unmeasured_param_list)) {
+    stop("`unmeasured_fam_list` and `unmeasured_param_list` must have same length.")
+  }
+
+  if (any(treatment_model_coefs[-1] %in% "1.|Int|int|Intercept")) {
+    stop("First element in `treatment_model_coefs` must be coefficient for
+         intercept, named '1', 'Int', 'int', or 'Intercept'.")
+  }
+
+  if (any(names(response_model_coefs[-1]) %in% "1.|Int|int|Intercept")) {
+    stop("First element in `response_model_coefs` must be coefficient for
+         intercept, named '1', 'Int', 'int', or 'Intercept'.")
+  }
+
+  if (names(response_model_coefs[length(response_model_coefs)]) != "x") {
+    stop("Last element in `response_model_coefs` must be coefficient for
+         treatment, named 'x'.")
+  }
+
+  if (any(names(response_model_coefs[-length(response_model_coefs)]) !=
+      names(treatment_model_coefs))) {
+    stop("`response_model_coefs` and `treatment_model_coefs` must have same names
+         attribute and be in the same order (excluding `x` in `response_model_coefs`).")
+  }
+
   a <- covariate_fam_list
   b <- covariate_param_list
   (covariate_df <- as.data.frame(
@@ -188,7 +217,6 @@ runm_full <- function(
     })
   )
   )
-
 
   a <- unmeasured_fam_list
   b <- unmeasured_param_list
@@ -208,23 +236,25 @@ runm_full <- function(
 
   df_combined <- cbind(covariate_df, unm_conf_df)
 
-  x_param_vec <- treatment_model_coefs
-  (length(x_param_vec) - 1) == ncol(df_combined)
-  names(df_combined) <- names(x_param_vec)[-1]
-  vec_names <- names(x_param_vec)
-  names(x_param_vec) <- sapply(vec_names, function(.) {
+  z_param_vec <- treatment_model_coefs
+  (length(z_param_vec) - 1) == ncol(df_combined)
+  names(df_combined) <- names(z_param_vec)[-which(grepl("1.|Int|int|Intercept",
+                                                        names(z_param_vec)))]
+  vec_names <- names(z_param_vec)
+  names(z_param_vec) <- sapply(vec_names, function(.) {
     glue::glue("et_{.}")
   })
   #make treatment
   if(treatment == TRUE) {
     W <- model.matrix(~ ., data = df_combined)
-    et <- x_param_vec
+    et <- z_param_vec
     p_et <- length(et) # = # non-confounder params in treatment model
     df_combined$x <- rbinom(n, 1, binomial()$linkinv(W %*% et))
   } else df_combined$x <- 0 # For the case of external validation data
 
   #make response
   X <- model.matrix(~ ., data = df_combined)
+
 
   (length(response_model_coefs) - 1) == ncol(df_combined)
   names(df_combined) <- names(response_model_coefs)[-1]
