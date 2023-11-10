@@ -28,7 +28,6 @@
 #'   Defaults to `"none"`, but you can change it on a per-session basis with
 #'   `options(unm_progress.bar = "text")`.
 #' @param code_only Should only the code be created?
-#' @param default_prior The default prior to use on the regression coefficients.
 #' @param priors Custom priors to use on regression coefficients, see examples.
 #' @param
 #'   response_nuisance_priors,confounder1_nuisance_priors,confounder2_nuisance_priors
@@ -61,48 +60,56 @@
 #'
 #' \dontrun{ # reduce cran check time
 #'
-#' (unm_mod <- unm_glm(y ~ .,
-#'                     u1 ~ . - y,
-#'                     family1 = gaussian(),
-#'                     family2 = gaussian(), data = df))
+#' (unm_mod <- unm_glm(
+#'   y ~ .,      family1 = gaussian(),
+#'   u1 ~ . - y, family2 = gaussian(),
+#'   data = df
+#' ))
 #' glm(y ~ x + z1 + z2 + z3, data = df)
 #' coef(unm_mod)
 #'
 #' jags_code(unm_mod)
-#' unm_glm(y ~ .,
-#'         u1 ~ . - y,
-#'         family1 = gaussian(),
-#'         family2 = gaussian(), data = df, code_only = TRUE)
+#' unm_glm(
+#'   y ~ .,
+#'   u1 ~ . - y,
+#'   family1 = gaussian(),
+#'   family2 = gaussian(),
+#'   data = df, code_only = TRUE
+#' )
 #'
 #'
 #'
 #'
 #' # a normal-normal model - external validation
 #' (df <- runm(c(10, 10), type = "ext", response = "norm"))
-#' (unm_mod <- unm_glm(y ~ x + z1 + z2 + z3 + u1,
-#'                     u1 ~ x + z1 + z2 + z3,
-#'                     family1 = gaussian(),
-#'                     family2 = gaussian(), data = df))
+#'
+#' unm_glm(
+#'   y ~ x + z1 + z2 + z3 + u1,  family1 = gaussian(),
+#'   u1 ~ x + z1 + z2 + z3,      family2 = gaussian(),
+#'   data = df
+#' )
 #'
 #'
 #'
 #' # setting custom priors
-#' unm_glm(y ~ .,
-#'         u1 ~ . - y,
-#'         family1 = gaussian(),
-#'         family2 = gaussian(), data = df, code_only = TRUE
-#' )
-#' unm_glm(y ~ .,
-#'         u1 ~ . - y,
-#'         family1 = gaussian(),
-#'         family2 = gaussian(), data = df, code_only = FALSE,
-#'         priors = c("lambda[u1]" = "dnorm(1, 10)"),
-#'         response_nuisance_priors = "tau_{y} <- sigma_{y}^-2; sigma_{y} ~ dunif(0, 100)",
-#'         response_params_to_track = "sigma_{y}",
-#'         confounder1_nuisance_priors = "tau_{u1} <- sigma_{u1}^-2; sigma_{u1} ~ dunif(0, 100)",
-#'         confounder1_params_to_track = "sigma_{u1}"
+#' unm_glm(
+#'   y ~ .,      family1 = gaussian(),
+#'   u1 ~ . - y, family2 = gaussian(),
+#'   data = df,
+#'   code_only = TRUE
 #' )
 #'
+#' unm_glm(
+#'   y ~ .,      family1 = gaussian(),
+#'   u1 ~ . - y, family2 = gaussian(),
+#'   data = df,
+#'   code_only = FALSE,
+#'   priors = c("lambda[u1]" = "dnorm(1, 10)"),
+#'   response_nuisance_priors = "tau_{y} <- sigma_{y}^-2; sigma_{y} ~ dunif(0, 100)",
+#'   response_params_to_track = "sigma_{y}",
+#'   confounder1_nuisance_priors = "tau_{u1} <- sigma_{u1}^-2; sigma_{u1} ~ dunif(0, 100)",
+#'   confounder1_params_to_track = "sigma_{u1}"
+#' )
 #'
 #'
 #' # turn progress tracking on
@@ -112,34 +119,43 @@
 #'
 #' # more complex functional forms _for non-confounder predictors only_
 #' # zero-intercept model
-#' unm_glm(y ~ . - 1,
-#'         u1 ~ . - y,
-#'         family1 = gaussian(),
-#'         family2 = gaussian(), data = df)
+#' unm_glm(
+#'   y ~ . - 1,
+#'   u1 ~ . - y,
+#'   family1 = gaussian(),
+#'   family2 = gaussian(),
+#'   data = df
+#' )
 #' glm(y ~ . - 1, data = df)
 #'
 #' # polynomial model
-#' unm_glm(y ~ x + poly(z1, 2) + u1,
-#'         u1 ~ x + z1,
-#'         family1 = gaussian(),
-#'         family2 = gaussian(), data = df)
+#' unm_glm(
+#'   y ~ x + poly(z1, 2) + u1,
+#'   u1 ~ x + z1,
+#'   family1 = gaussian(),
+#'   family2 = gaussian(),
+#'   data = df
+#' )
 #' glm(y ~ x + poly(z1, 2), data = df)
 #'
 #' # interaction model
-#' unm_glm(y ~ x*z1 + u1,
-#'         u1 ~ x*z1,
-#'         family1 = gaussian(),
-#'         family2 = gaussian(), data = df)
+#' unm_glm(
+#'   y ~ x*z1 + u1, family1 = gaussian(),
+#'   u1 ~ x*z1,     family2 = gaussian(),
+#'   data = df
+#' )
 #' glm(y ~ x*z1, data = df)
 #'
 #'
 #'
 #' # a binomial-binomial model
-#' (df <- runm(50,
-#'             missing_prop = .75,
-#'             response = "bin",
-#'             unmeasured_fam_list = list("bin"),
-#'             unmeasured_param_list = list(.5)))
+#' (df <- runm(
+#'   50,
+#'   missing_prop = .75,
+#'   response = "bin",
+#'   unmeasured_fam_list = list("bin"),
+#'   unmeasured_param_list = list(.5)
+#' ))
 #' (unm_mod <- unm_glm(
 #'   y ~ .,
 #'   u1 ~ . - y,
@@ -152,14 +168,16 @@
 #'
 #'
 #' # a poisson-normal model
-#' (df <- runm(25,
-#'             response = "pois",
-#'             response_model_coefs = c("int" = -1, "z" = .5, "u1" = .5, "x" = .5),
-#'             treatment_model_coefs = c("int" = -1, "z" = .5, "u1" = .5),
-#'             covariate_fam_list = list("norm"),
-#'             covariate_param_list = list(c(mean = 0, sd = 1)),
-#'             unmeasured_fam_list = list("norm"),
-#'             unmeasured_param_list = list(c(0, 1))))
+#' (df <- runm(
+#'   25,
+#'   response = "pois",
+#'   response_model_coefs = c("int" = -1, "z" = .5, "u1" = .5, "x" = .5),
+#'   treatment_model_coefs = c("int" = -1, "z" = .5, "u1" = .5),
+#'   covariate_fam_list = list("norm"),
+#'   covariate_param_list = list(c(mean = 0, sd = 1)),
+#'   unmeasured_fam_list = list("norm"),
+#'   unmeasured_param_list = list(c(0, 1))
+#' ))
 #'
 #' (unm_mod <- unm_glm(
 #'   y ~ x + z + u1 + offset(log(t)),
@@ -173,63 +191,82 @@
 #'
 #'
 #' # a poisson-binomial model
-#' (df <- runm(25,
-#'             response = "pois",
-#'             response_model_coefs = c("int" = -1, "z" = .5, "u1" = .5, "x" = .5),
-#'             treatment_model_coefs = c("int" = -1, "z" = .5, "u1" = .5),
-#'             covariate_fam_list = list("norm"),
-#'             covariate_param_list = list(c(mean = 0, sd = 1)),
-#'             unmeasured_fam_list = list("bin"),
-#'             unmeasured_param_list = list(.5)))
+#' (df <- runm(
+#'   25,
+#'   response = "pois",
+#'   response_model_coefs = c("int" = -1, "z" = .5, "u1" = .5, "x" = .5),
+#'   treatment_model_coefs = c("int" = -1, "z" = .5, "u1" = .5),
+#'   covariate_fam_list = list("norm"),
+#'   covariate_param_list = list(c(mean = 0, sd = 1)),
+#'   unmeasured_fam_list = list("bin"),
+#'   unmeasured_param_list = list(.5)
+#' ))
+#'
 #' (unm_mod <- unm_glm(
 #'   y ~ x + z + u1 + offset(log(t)), family1 = poisson(),
 #'   u1 ~ x + z,                      family2 = binomial(),
 #'   data = df
 #' ))
+#'
 #' glm(y ~ x + z + offset(log(t)), family = poisson(), data = df)
 #'
 #'
 #'
 #' # a gamma-normal model
-#' (df <- runm(25,
-#'             response = "gam",
-#'             response_model_coefs = c("int" = -1, "z" = .5, "u1" = .5, "x" = .5),
-#'             treatment_model_coefs = c("int" = -1, "z" = .5, "u1" = .5),
-#'             covariate_fam_list = list("norm"),
-#'             covariate_param_list = list(c(mean = 0, sd = 1)),
-#'             unmeasured_fam_list = list("norm"),
-#'             unmeasured_param_list = list(c(0, 1))))
+#' (df <- runm(
+#'   25,
+#'   response = "gam",
+#'   response_model_coefs = c("int" = -1, "z" = .5, "u1" = .5, "x" = .5),
+#'   treatment_model_coefs = c("int" = -1, "z" = .5, "u1" = .5),
+#'   covariate_fam_list = list("norm"),
+#'   covariate_param_list = list(c(mean = 0, sd = 1)),
+#'   unmeasured_fam_list = list("norm"),
+#'   unmeasured_param_list = list(c(0, 1))
+#' ))
+#'
 #' (unm_mod <- unm_glm(
 #'   y ~ x + z + u1, family1 = Gamma(),
-#'   u1 ~ x + z, family2 = gaussian(),
+#'   u1 ~ x + z,     family2 = gaussian(),
 #'   data = df
 #' ))
+#'
 #' glm(y ~ x + z, family = Gamma(link = "log"), data = df)
 #'
 #'
 #'
 #' # a gamma-binomial model
-#' (df <- runm(25,
-#'             response = "gam",
-#'             response_model_coefs = c("int" = -1, "z" = .5, "u1" = .5, "x" = .5),
-#'             treatment_model_coefs = c("int" = -1, "z" = .5, "u1" = .5),
-#'             covariate_fam_list = list("norm"),
-#'             covariate_param_list = list(c(mean = 0, sd = 1)),
-#'             unmeasured_fam_list = list("bin"),
-#'             unmeasured_param_list = list(.5)))
+#' (df <- runm(
+#'   25,
+#'   response = "gam",
+#'   response_model_coefs = c("int" = -1, "z" = .5, "u1" = .5, "x" = .5),
+#'   treatment_model_coefs = c("int" = -1, "z" = .5, "u1" = .5),
+#'   covariate_fam_list = list("norm"),
+#'   covariate_param_list = list(c(mean = 0, sd = 1)),
+#'   unmeasured_fam_list = list("bin"),
+#'   unmeasured_param_list = list(.5)
+#' ))
+#'
 #' (unm_mod <- unm_glm(
 #'   y ~ x + z + u1, family1 = Gamma(),
-#'   u1 ~ x + z, family2 = binomial(),
+#'   u1 ~ x + z,     family2 = binomial(),
 #'   data = df
 #' ))
-#' glm(y ~ x + z, family = Gamma(link = "log"), data = df)
 #' print(df, n = 25)
+#'
+#' glm(y ~ x + z, family = Gamma(link = "log"), data = df)
 #'
 #'
 #'
 #' # the output of unm_glm() is classed jags output
+#'
 #' (df <- runm(20, response = "norm"))
-#' (unm_mod <- unm_glm(y ~ ., u1 ~ . - y, family1 = gaussian(), family2 = gaussian(), data = df))
+#' (unm_mod <- unm_glm(
+#'   y ~ .,
+#'   u1 ~ . - y,
+#'   family1 = gaussian(),
+#'   family2 = gaussian(),
+#'   data = df)
+#' )
 #' class(unm_mod)
 #' jags_code(unm_mod)
 #' unm_glm(y ~ ., u1 ~ . - y, data = df, code_only = TRUE)
@@ -255,22 +292,24 @@
 #'
 #' library("dplyr")
 #' library("tidyr")
-#' unm_mod %>% as.matrix() %>% as_tibble() %>%
+#' unm_mod %>%
+#'   as.matrix() %>%
+#'   as_tibble() %>%
 #'   pivot_longer(everything(), names_to = "var", values_to = "val") %>%
 #'   ggplot(aes("0", val)) +
-#'     geom_jitter() +
-#'     geom_point(
-#'       aes("0", value), data = tibble::enframe(attr(df, "params"), name = "var"),
-#'       color = "red", fill = "pink", size = 4, shape = 21
-#'     ) +
-#'     coord_flip() +
-#'     facet_grid(var ~ ., scales = "free_y", labeller = label_parsed) +
-#'     theme_bw() +
-#'     theme(
-#'       axis.title = element_blank(),
-#'       axis.text.y = element_blank(), axis.ticks.y = element_blank(),
-#'       strip.text.y = element_text(angle = 0)
-#'     )
+#'   geom_jitter() +
+#'   geom_point(
+#'     aes("0", value), data = tibble::enframe(attr(df, "params"), name = "var"),
+#'     color = "red", fill = "pink", size = 4, shape = 21
+#'   ) +
+#'   coord_flip() +
+#'   facet_grid(var ~ ., scales = "free_y", labeller = label_parsed) +
+#'   theme_bw() +
+#'   theme(
+#'     axis.title = element_blank(),
+#'     axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+#'     strip.text.y = element_text(angle = 0)
+#'   )
 #'
 #'
 #' # getting draws out
@@ -297,94 +336,102 @@
 #'
 #' # ~~ Two Unmeasured Confounders Examples (III-Stage Model) ~~
 #' # a normal-normal-normal model - internal validation
-#' (df <- runm(50,
-#'             missing_prop = .75,
-#'             response = "norm",
-#'             response_model_coefs = c("int" = -1, "z" = .5,
-#'                                      "u1" = .5, "u2" = .5, "x" = .5),
-#'             treatment_model_coefs = c("int" = -1, "z" = .5,
-#'                                       "u1" = .5, "u2" = .5),
-#'             covariate_fam_list = list("norm"),
-#'             covariate_param_list = list(c(mean = 0, sd = 1)),
-#'             unmeasured_fam_list = list("norm", "norm"),
-#'             unmeasured_param_list = list(c(0, 1), c(0, 1))))
-#' (unm_mod <- unm_glm(y ~ x + z + u1 + u2,
-#'                     u1 ~ x + z + u2,
-#'                     u2 ~ x + z,
-#'                     family1 = gaussian(),
-#'                     family2 = gaussian(),
-#'                     family3 = gaussian(), data = df))
+#' (df <- runm(
+#'   50,
+#'   missing_prop = .75,
+#'   response = "norm",
+#'   response_model_coefs = c("int" = -1, "z" = .5,
+#'                            "u1" = .5, "u2" = .5, "x" = .5),
+#'   treatment_model_coefs = c("int" = -1, "z" = .5,
+#'                             "u1" = .5, "u2" = .5),
+#'   covariate_fam_list = list("norm"),
+#'   covariate_param_list = list(c(mean = 0, sd = 1)),
+#'   unmeasured_fam_list = list("norm", "norm"),
+#'   unmeasured_param_list = list(c(0, 1), c(0, 1))
+#' ))
+#' (unm_mod <- unm_glm(
+#'   y ~ x + z + u1 + u2,
+#'   u1 ~ x + z + u2,
+#'   u2 ~ x + z,
+#'   family1 = gaussian(),
+#'   family2 = gaussian(),
+#'   family3 = gaussian(),
+#'   data = df
+#' ))
+#'
 #' glm(y ~ x + z, data = df)
 #' coef(unm_mod)
 #'
-#' unm_glm(y ~ x + z + u1 + u2,
-#'         u1 ~ x + z + u2,
-#'         u2 ~ x + z,
-#'         family1 = gaussian(),
-#'         family2 = gaussian(),
-#'         family3 = gaussian(), data = df, code_only = TRUE)
+#' unm_glm(
+#'   ~ x + z + u1 + u2, family1 = gaussian(),
+#'   u1 ~ x + z + u2,   family2 = gaussian(),
+#'   u2 ~ x + z,        family3 = gaussian(),
+#'   data = df,
+#'   code_only = TRUE
+#' )
 #'
 #'
 #'
 #' # a normal-normal-normal model - external validation
-#' (df <- runm(c(20, 20),
-#'             type = "ext",
-#'             response = "norm",
-#'             response_model_coefs = c("int" = -1, "z" = .5,
-#'                                      "u1" = .5, "u2" = .5, "x" = .5),
-#'             treatment_model_coefs = c("int" = -1, "z" = .5,
-#'                                       "u1" = .5, "u2" = .5),
-#'             covariate_fam_list = list("norm"),
-#'             covariate_param_list = list(c(mean = 0, sd = 1)),
-#'             unmeasured_fam_list = list("norm", "norm"),
-#'             unmeasured_param_list = list(c(0, 1), c(0, 1))))
-#' (unm_mod <- unm_glm(y ~ x + z + u1 + u2,
-#'                     u1 ~ x + z + u2,
-#'                     u2 ~ x + z,
-#'                     family1 = gaussian(),
-#'                     family2 = gaussian(),
-#'                     family3 = gaussian(), data = df))
+#' (df <- runm(
+#'   c(20, 20),
+#'   type = "ext",
+#'   response = "norm",
+#'   response_model_coefs = c("int" = -1, "z" = .5,
+#'                            "u1" = .5, "u2" = .5, "x" = .5),
+#'   treatment_model_coefs = c("int" = -1, "z" = .5,
+#'                             "u1" = .5, "u2" = .5),
+#'   covariate_fam_list = list("norm"),
+#'   covariate_param_list = list(c(mean = 0, sd = 1)),
+#'   unmeasured_fam_list = list("norm", "norm"),
+#'   unmeasured_param_list = list(c(0, 1), c(0, 1))
+#' ))
+#' (unm_mod <- unm_glm(
+#'   y ~ x + z + u1 + u2,  family1 = gaussian(),
+#'   u1 ~ x + z + u2,      family2 = gaussian(),
+#'   u2 ~ x + z,           family3 = gaussian(),
+#'   data = df
+#' ))
 #'
 #'
 #'
 #' # a binomial-binomial-binomial model - internal validation
-#' (df <- runm(25,
-#'             response = "bin",
-#'             response_model_coefs = c("int" = -1, "z" = .5,
-#'                                      "u1" = .5, "u2" = .5, "x" = .5),
-#'             treatment_model_coefs = c("int" = -1, "z" = .5,
-#'                                       "u1" = .5, "u2" = .5),
-#'             covariate_fam_list = list("norm"),
-#'             covariate_param_list = list(c(mean = 0, sd = 1)),
-#'             unmeasured_fam_list = list("bin", "bin"),
-#'             unmeasured_param_list = list(.5, .75)))
+#' (df <- runm(
+#'   25,
+#'   response = "bin",
+#'   response_model_coefs = c("int" = -1, "z" = .5,
+#'                            "u1" = .5, "u2" = .5, "x" = .5),
+#'   treatment_model_coefs = c("int" = -1, "z" = .5,
+#'                             "u1" = .5, "u2" = .5),
+#'   covariate_fam_list = list("norm"),
+#'   covariate_param_list = list(c(mean = 0, sd = 1)),
+#'   unmeasured_fam_list = list("bin", "bin"),
+#'   unmeasured_param_list = list(.5, .75)
+#' ))
 #' unm_glm(y ~ x + z + u1 + u2, family1 = binomial(),
-#'         u1 ~ x + z + u2, family2 = binomial(),
-#'         u2 ~ x + z, family3 = binomial(),
-#'         data = df, code_only = TRUE)
+#'         u1 ~ x + z + u2,     family2 = binomial(),
+#'         u2 ~ x + z,          family3 = binomial(),
+#'         data = df,
+#'         code_only = TRUE
+#' )
 #'
 #'
 #' }
 #'
 
 
-
-
-
-
 #' @export
 #' @rdname unm_glm
 
 unm_glm <- function(
-    form1, form2 = NA, form3 = NA,
-    family1 = binomial(), family2 = NA, family3 = NA,
+    form1, form2 = NULL, form3 = NULL,
+    family1 = binomial(), family2 = NULL, family3 = NULL,
     data,
     n.iter = 2000, n.adapt = 1000, thin = 1, n.chains = 4,
     filename = tempfile(fileext = ".jags"),
     quiet = getOption("unm_quiet"),
     progress.bar = getOption("unm_progress.bar"),
     code_only = FALSE,
-    default_prior = NULL,
     priors,
     response_nuisance_priors, response_params_to_track,
     confounder1_nuisance_priors, confounder1_params_to_track,
@@ -392,57 +439,53 @@ unm_glm <- function(
     ...
 ) {
 
-  if (is.null(default_prior)) {
-    default_prior <- switch(family1$family,
-                            "gaussian" = "dnorm(0, .001)",
-                            "binomial" = "dnorm(0, .1)",
-                            "Gamma" = "dnorm(0, .001)",
-                            "poisson" = "dnorm(0, .1)")
-  }
-
   g <- glue::glue
 
   if (!inherits(family2, "family")) family2 <- list("family" = "none")
   if (!inherits(family3, "family")) family3 <- list("family" = "none")
 
   y <- deparse(form1[[2]]) # e.g. "y", character name of response var
-  u1 <- if(inherits(form2, "formula")) deparse(form2[[2]]) else NULL # e.g. "u1", character name of confounding var
-  u2 <- if(inherits(form3, "formula")) deparse(form3[[2]]) else NULL # e.g. "u2", character name of confounding var
+  u1 <- if (inherits(form2, "formula")) deparse(form2[[2]]) else NULL # e.g. "u1", character name of confounding var
+  u2 <- if (inherits(form3, "formula")) deparse(form3[[2]]) else NULL # e.g. "u2", character name of confounding var
 
-  if(!is.null(u1)) {
+  if (!is.null(u1)) {
     conf_piece <- "+ inprod(U[i,], lambda)"
   } else {
     conf_piece <- ""
   }
 
-  response_model_code <- switch(family1$family,
-                                "gaussian" = g("{y}[i] ~ dnorm(mu_{y}[i], tau_{y})
+  response_model_code <- switch(
+    family1$family,
+    "gaussian" = g("{y}[i] ~ dnorm(mu_{y}[i], tau_{y})
 {'    '}mu_{y}[i] <- inprod(X[i,], beta) {conf_piece}"),
-"binomial" = g("{y}[i] ~ dbern(p_{y}[i])
+    "binomial" = g("{y}[i] ~ dbern(p_{y}[i])
 {'    '}logit(p_{y}[i]) <- inprod(X[i,], beta) {conf_piece}"),
-# note: r parameterizes the gamma as shape al and rate la, with mean = al / la
-#    jags parameterizes the gamma as shape  r and rate la, with mean =  r / la, the same
-"Gamma" = g("{y}[i] ~ dgamma(alpha_{y}, d[i])
+    # note: r parameterizes the gamma as shape al and rate la, with mean = al / la
+    #    jags parameterizes the gamma as shape  r and rate la, with mean =  r / la, the same
+    "Gamma" = g("{y}[i] ~ dgamma(alpha_{y}, d[i])
 {'    '}d[i] <- alpha_{y} / mu_{y}[i]
 {'    '}log(mu_{y}[i]) <- inprod(X[i,], beta) {conf_piece}"),
-"poisson" = g("{y}[i] ~ dpois(mu_{y}[i])
-{'    '}log(mu_{y}[i]) <- log_e[i] + inprod(X[i,], beta) {conf_piece}"))
+    "poisson" = g("{y}[i] ~ dpois(mu_{y}[i])
+{'    '}log(mu_{y}[i]) <- log_e[i] + inprod(X[i,], beta) {conf_piece}")
+  )
 
 
   if (missing(response_nuisance_priors)) {
 
-    response_nuisance_priors <- switch(family1$family,
-                                       "gaussian" = g("tau_{y} ~ dt(0, 1, 3) I(0, )"),
-                                       "binomial" = " ",
-                                       "Gamma" = g("alpha_{y} ~ dgamma(.1, .1)"),
-                                       "poisson" = " "
+    response_nuisance_priors <- switch(
+      family1$family,
+      "gaussian" = g("tau_{y} ~ dt(0, 1, 3) I(0, )"),
+      "binomial" = " ",
+      "Gamma" = g("alpha_{y} ~ dgamma(.1, .1)"),
+      "poisson" = " "
     )
 
-    response_params_to_track <- switch(family1$family,
-                                       "gaussian" = g("tau_{y}"),
-                                       "binomial" = character(0),
-                                       "Gamma" = g("alpha_{y}"),
-                                       "poisson" = character(0)
+    response_params_to_track <- switch(
+      family1$family,
+      "gaussian" = g("tau_{y}"),
+      "binomial" = character(0),
+      "Gamma" = g("alpha_{y}"),
+      "poisson" = character(0)
     )
 
   } else {
@@ -452,33 +495,36 @@ unm_glm <- function(
 
   }
 
-  if(!is.null(u2)) {
+  if (!is.null(u2)) {
     conf2_piece <- "+ inprod(U[i, 2], zeta)"
   } else {
     conf2_piece <- ""
   }
 
-  confounder1_model_code <- switch(family2$family,
-                                   "gaussian" = g("U[i,1] ~ dnorm(mu_{u1}[i], tau_{u1})
+  confounder1_model_code <- switch(
+    family2$family,
+    "gaussian" = g("U[i,1] ~ dnorm(mu_{u1}[i], tau_{u1})
                    {'    '}mu_{u1}[i] <- inprod(W[i,], gamma) {conf2_piece}"),
-                   "binomial" = g("U[i,1] ~ dbern(p_{u1}[i])
+    "binomial" = g("U[i,1] ~ dbern(p_{u1}[i])
                    {'    '}logit(p_{u1}[i]) <- inprod(W[i,], gamma) {conf2_piece}"),
-                   "none" = "")
+    "none" = ""
+  )
 
   if (missing(confounder1_nuisance_priors)) {
 
-    confounder1_nuisance_priors <- switch(family2$family,
-                                          # "gaussian" = g("tau_{u1} <- 1 / ( sigma_{u1} * sigma_{u1} ); sigma_{u1} ~ dunif(0, 100)"),
-                                          "gaussian" = g("tau_{u1} ~ dt(0, 1, 3) I(0, )"),
-                                          "binomial" = " ",
-                                          "none" = ""
+    confounder1_nuisance_priors <- switch(
+      family2$family,
+      "gaussian" = g("tau_{u1} ~ dt(0, 1, 3) I(0, )"),
+      "binomial" = " ",
+      "none" = ""
     )
 
-    confounder1_params_to_track <- switch(family2$family,
-                                          # "gaussian" = g("sigma_{u1}"),
-                                          "gaussian" = g("tau_{u1}"),
-                                          "binomial" = character(0),
-                                          "none" = character(0)
+    confounder1_params_to_track <- switch(
+      family2$family,
+      # "gaussian" = g("sigma_{u1}"),
+      "gaussian" = g("tau_{u1}"),
+      "binomial" = character(0),
+      "none" = character(0)
     )
 
   } else {
@@ -488,27 +534,30 @@ unm_glm <- function(
 
   }
 
-  confounder2_model_code <- switch(family3$family,
-                                   "gaussian" = g("U[i,2] ~ dnorm(mu_{u2}[i], tau_{u2})
+  confounder2_model_code <- switch(
+    family3$family,
+    "gaussian" = g("U[i,2] ~ dnorm(mu_{u2}[i], tau_{u2})
                  {'    '}mu_{u2}[i] <- inprod(V[i,], delta)"),
-                 "binomial" = g("U[i,2] ~ dbern(p_{u2}[i])
+    "binomial" = g("U[i,2] ~ dbern(p_{u2}[i])
                  {'    '}logit(p_{u2}[i]) <- inprod(V[i,], delta)"),
-                 "none" = "")
+    "none" = ""
+  )
 
   if (missing(confounder2_nuisance_priors)) {
 
-    confounder2_nuisance_priors <- switch(family3$family,
-                                          # "gaussian" = g("tau_{u1} <- 1 / ( sigma_{u1} * sigma_{u1} ); sigma_{u1} ~ dunif(0, 100)"),
-                                          "gaussian" = g("tau_{u2} ~ dt(0, 1, 3) I(0, )"),
-                                          "binomial" = " ",
-                                          "none" = ""
+    confounder2_nuisance_priors <- switch(
+      family3$family,
+      "gaussian" = g("tau_{u2} ~ dt(0, 1, 3) I(0, )"),
+      "binomial" = " ",
+      "none" = ""
     )
 
-    confounder2_params_to_track <- switch(family3$family,
-                                          # "gaussian" = g("sigma_{u1}"),
-                                          "gaussian" = g("tau_{u2}"),
-                                          "binomial" = character(0),
-                                          "none" = character(0)
+    confounder2_params_to_track <- switch(
+      family3$family,
+      # "gaussian" = g("sigma_{u1}"),
+      "gaussian" = g("tau_{u2}"),
+      "binomial" = character(0),
+      "none" = character(0)
     )
 
   } else {
@@ -524,8 +573,8 @@ unm_glm <- function(
   on.exit(options(na.action = current_na_action), add = TRUE)
   options(na.action = "na.pass")
   (X <- model.matrix(form1, data = data))
-  if(!is.null(u1)) (W <- model.matrix(form2, data = data)) else (W <- NULL)
-  if(!is.null(u2)) (V <- model.matrix(form3, data = data)) else (V <- NULL)
+  if (!is.null(u1)) (W <- model.matrix(form2, data = data)) else (W <- NULL)
+  if (!is.null(u2)) (V <- model.matrix(form3, data = data)) else (V <- NULL)
 
 
   # partition response model matrix into observed and unobserved parts
@@ -561,16 +610,18 @@ unm_glm <- function(
 
   # make priors
   jags_coefs <-
-    if(is.null(u1)){
+    if (is.null(u1)) {
       c( g("beta[{1:p_be}]") )
-    } else if(is.null(u2)){
+    } else if (is.null(u2)) {
       c( g("beta[{1:p_be}]"), g("lambda[{1:p_la}]"), g("gamma[{1:p_ga}]") )
     } else {
       c( g("beta[{1:p_be}]"), g("lambda[{1:p_la}]"), g("gamma[{1:p_ga}]"),
          g("zeta[{1:p_ze}]"), g("delta[{1:p_de}]") )
     }
-  real_coefs <- c( g("beta[{X_vars}]"), g("lambda[{U_vars}]"), g("gamma[{W_vars}]"),
-                   g("zeta[{U2_vars}]"), g("delta[{V_vars}]") )
+
+  real_coefs <- c( g("beta[{X_vars}]"), g("lambda[{U_vars}]"),
+                   g("gamma[{W_vars}]"), g("zeta[{U2_vars}]"),
+                   g("delta[{V_vars}]") )
   real_coefs <- gsub("\\(Intercept\\)", "1", real_coefs)
 
   # make function to convert coefficient names, e.g. gamma[x] -> gamma[2]
@@ -590,7 +641,38 @@ unm_glm <- function(
   # jags_to_real_coefs(c("beta[1]", "gamma[2]", "a", "lambda[1]"))
   # [1] "beta[1]" "gamma[x]" "a" "lambda[u]"
 
-  jags_priors <- rep(default_prior, length(jags_coefs))
+  default_prior1 <- switch(
+    family1$family,
+    "gaussian" = "dnorm(0, .001)",
+    "binomial" = "dnorm(0, .1)",
+    "Gamma" = "dnorm(0, .001)",
+    "poisson" = "dnorm(0, .1)",
+    "none" = ""
+  )
+
+  default_prior2 <- switch(
+    family2$family,
+    "gaussian" = "dnorm(0, .001)",
+    "binomial" = "dnorm(0, .1)",
+    "none" = ""
+  )
+
+  default_prior3 <- switch(
+    family3$family,
+    "gaussian" = "dnorm(0, .001)",
+    "binomial" = "dnorm(0, .1)",
+    "none" = ""
+  )
+
+
+  prior_struct1 <-
+    rep(default_prior1, length(jags_coefs[grepl("(beta|lambda)", jags_coefs)]))
+  prior_struct2 <-
+    rep(default_prior2, length(jags_coefs[grepl("(gamma|zeta)", jags_coefs)]))
+  prior_struct3 <-
+    rep(default_prior3, length(jags_coefs[grepl("(delta)", jags_coefs)]))
+
+  jags_priors <- c(prior_struct1, prior_struct2, prior_struct3)
   names(jags_priors) <- jags_coefs
   if (!missing(priors)) jags_priors[real_to_jags_coefs(names(priors))] <- priors
 
@@ -754,23 +836,27 @@ print.unm_int <- function(x, digits = 3, ...,
   ests <- summary$statistic[,1]
   one_to_intercept <- function(x) { x[x == "1"] <- "(Intercept)"; x }
 
+
   cat("Response model coefficients:\n")
   response_ests <- ests[grepl("(beta|lambda)", names(ests))]
   names(response_ests) <- one_to_intercept(ez_extract_subset(names(response_ests)))
   print(round(response_ests, digits = digits))
   cat("\n")
 
-  cat("Confounder model coefficients 1:\n")
-  confounder1_ests <- ests[grepl("gamma|zeta", names(ests))]
-  names(confounder1_ests) <- one_to_intercept(ez_extract_subset(names(confounder1_ests)))
-  print(round(confounder1_ests, digits = digits))
-  cat("\n")
-
-  cat("Confounder model coefficients 2:\n")
-  confounder2_ests <- ests[grepl("delta", names(ests))]
-  names(confounder2_ests) <- one_to_intercept(ez_extract_subset(names(confounder2_ests)))
-  print(round(confounder2_ests, digits = digits))
-  cat("\n")
+  if (any(grepl("(gamma|zeta)", names(ests)))) {
+    cat("Confounder 1 model coefficients:\n")
+    confounder1_ests <- ests[grepl("gamma|zeta", names(ests))]
+    names(confounder1_ests) <- one_to_intercept(ez_extract_subset(names(confounder1_ests)))
+    print(round(confounder1_ests, digits = digits))
+    cat("\n")
+  }
+  if (any(grepl("(delta)", names(ests)))) {
+    cat("Confounder 2 model coefficients:\n")
+    confounder2_ests <- ests[grepl("delta", names(ests))]
+    names(confounder2_ests) <- one_to_intercept(ez_extract_subset(names(confounder2_ests)))
+    print(round(confounder2_ests, digits = digits))
+    cat("\n")
+  }
 
   other_ests <- ests[!grepl("(beta|lambda|gamma|delta|zeta)", names(ests))]
   if (length(other_ests) > 0) {
