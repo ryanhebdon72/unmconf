@@ -10,14 +10,15 @@ Authors@R:
            comment = c(ORCID = "0000-0002-3787-6490")),
     person(given = "David", family = "Kahle", role = c("aut", "cre"),
            email = "david@kahle.io",
-           comment = c(ORCID = "0000-0002-9999-1558")))
+           comment = c(ORCID = "0000-0002-9999-1558")),
+    person(given = "Xiang", family = "Zhang", role = c("aut"),
+           email = "Xiang.Zhang@cslbehring.com"))
 Maintainer: David Kahle <david@kahle.io>
-Description: A package that fits and assesses Bayesian multi-staged regression 
-    models while accounting for unmeasured confounders.
+Description: Tools for fitting and assessing Bayesian multi-staged regression 
+  models that account for unmeasured confounders.
 SystemRequirements: JAGS >= 4.3.0 (http://mcmc-jags.sourceforge.net)
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Depends:
