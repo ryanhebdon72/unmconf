@@ -3,7 +3,7 @@
 \docType{package}
 \name{unmconf}
 \alias{unmconf}
-\alias{package-unmconf}
+\alias{unmconf-package}
 \title{unmconf: Modeling with Unmeasured Confounding}
 \description{
 Tools for fitting and assessing Bayesian multi-staged regression models that

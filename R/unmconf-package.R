@@ -10,5 +10,5 @@
 #' @importFrom glue glue
 #' @docType package
 #' @name unmconf
-#' @aliases unmconf package-unmconf
+#' @aliases unmconf unmconf-package
 NULL
