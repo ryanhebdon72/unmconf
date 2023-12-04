@@ -14,25 +14,26 @@ knitr::opts_chunk$set(
 )
 ```
 
+
 # Introduction
 
-`unmconf` is a package that employs a fully Bayesian hierarchical framework for modeling under the presence of unmeasured confounders using JAGS (Just Another Gibbs Sampler). Bayesian data analysis can be summarized in the following four steps: specifying the data model and prior, estimating model parameters, evaluating sampling quality and model fit, and summarizing and interpreting results. However, for users new to Markov Chain Monte Carlo (MCMC) software who wish to implement models involving unmeasured confounding, challenges arise in regard to understanding the syntax and how these programs handle missing data. The primary objective of `unmconf` is to address these challenges by creating a function that resembles `glm()` on the front end, while seamlessly implementing the necessary JAGS code on the back end. Functions are implemented to simplify the workflow using this model by acquiring data, modeling data, conducting diagnostics testing on the model, and analyzing results. With this package, users can perform robust fully Bayesian analyses, even without previous familiarity with JAGS syntax or data processing intricacies.
+`unmconf` is a package that employs a fully Bayesian hierarchical framework for modeling under the presence of unmeasured confounders using JAGS (Just Another Gibbs Sampler). The package handles both internal and external validation scenarios for up to two unmeasured confounders. Bayesian data analysis can be summarized in the following four steps: specifying the data model and prior, estimating model parameters, evaluating sampling quality and model fit, and summarizing and interpreting results. For users new to Markov Chain Monte Carlo (MCMC) software who wish to implement models involving unmeasured confounding, challenges arise in regard to understanding the syntax and how these programs handle missing data. The primary objective of `unmconf` is to address these challenges by creating a function that resembles `glm()` on the front end, while seamlessly implementing the necessary JAGS code on the back end. Functions are implemented to simplify the workflow using this model by acquiring data, modeling data, conducting diagnostics testing on the model, and analyzing results. With this package, users can perform robust fully Bayesian analyses, even without previous familiarity with JAGS syntax or data processing intricacies.
 
 ## Bayesian Multi-Staged Regression Model
 
-For the statistical model, we denote the continuous, discrete, or dichotomous outcome as $Y$, the dichotomous main exposure variable as $X$, the $p \times 1$ vector of perfectly observed covariates relating to both $Y$ and $X$ is denoted $C$, and the unmeasured confounder(s) relating to both $Y$ and $X$ are denoted $U_j, j = 1, 2$. These unmeasured confounders can be either binary or normally distributed. Consider the case where $j = 2$. Then,
+For the statistical model, we denote the continuous or discrete outcome as $Y$, the dichotomous main exposure variable as $X$, the $p \times 1$ vector of perfectly observed covariates relating to both $Y$ and $X$ is denoted $C$, and the unmeasured confounder(s) relating to both $Y$ and $X$ are denoted $U_j, j = 1, 2$. These unmeasured confounders can be either binary or normally distributed. Consider the case where $j = 2$. Then,
 
 ```{=tex}
 \begin{equation}
 \begin{split}
-    y|x, u, z & \sim D(g^{-1}({\beta}'\textbf{C} + {\lambda}'\textbf{U}), \xi_y) \\
-    u_1|x, z & \sim D(g^{-1}({\gamma}'\textbf{C} + \zeta U_2), \xi_{u_1}) \\
-    u_2|x, z & \sim D(g^{-1}({\delta}'\textbf{C}), \xi_{u_2}),
+    y|x, u, z & \sim D_y(g^{-1}({\beta}'\textbf{C} + {\lambda}'\textbf{U}), \xi_y) \\
+    u_1|x, z & \sim D_{u_1}(g^{-1}({\gamma}'\textbf{C} + \zeta U_2), \xi_{u_1}) \\
+    u_2|x, z & \sim D_{u_2}(g^{-1}({\delta}'\textbf{C}), \xi_{u_2}),
 \end{split}
 \end{equation}
 ```
 
-where \textbf{C} denotes the design matrix comprised of the main exposure variable, $X$, and all of the perfectly observed covariates. This model is completed by the specification of a link function, $g$, for some distribution, $D$. Additional parameters for certain distributions are denoted by $\xi_y$ and $\xi_u$. Examples of these would be $\sigma^2$ for the variance of a normal distribution or $\alpha$ for the shape parameter in the gamma distribution. The package `unmconf` allows for the user to work with a response from the normal, Poisson, gamma, or binomial distribution and unmeasured confounder(s) from the normal or binomial distribution. The package supports identity (normal), log (Poisson or gamma), and logit (Bernoulli) link functions.
+where \textbf{C} denotes the design matrix comprised of the main exposure variable, $X$, and all of the perfectly observed covariates. This model is completed by the specification of a link function, $g$, for some distribution, $D$. Additional parameters for certain distributions are denoted by $\xi_y$ and $\xi_u$. Examples of these would be $\sigma^2$ for the variance of a normal distribution or $\alpha$ for the shape parameter in the gamma distribution. `unmconf` allows for the user to work with a response from the normal, Poisson, gamma, or binomial distribution and unmeasured confounder(s) from the normal or binomial distribution. The package supports identity (normal), log (Poisson or gamma), and logit (Bernoulli) link functions.
 
 
 ### Prior Structure
@@ -41,14 +42,14 @@ Prior distributions for the model parameters will be jointly defined as ${\pi}({
 
 # Generating Data
 
-The function `runm()` is used to generate the data. In the workflow of this package, this function is not required to use if the data is already collected. The perfectly measured covariates and unmeasured confounder(s) are generated independently of one another. The user can specify these variables' families and their respective distributions as named lists in `runm()`. Then, the data frame will be generated using the named vector of response model coefficients, $\boldsymbol{\beta}_R$, and treatment model coefficients, $\boldsymbol{\eta}_T$, that the user provides in the function. `runm()` will model the following:
+The function `runm()` is used to generate the data. In the workflow of this package, this function is not required to use if one wishes to analyze a data set of interest. The perfectly measured covariates and unmeasured confounder(s) are generated independently of one another. The user can specify these variables' families and their respective distributions as named lists in `runm()`. Then, the data frame will be generated using the named vector of response model coefficients, $\boldsymbol{\beta}_R$, and treatment model coefficients, $\boldsymbol{\beta}_T$, that the user provides in the function. `runm()` will model the following:
 
 ```{=tex}
 \begin{equation}
 \begin{split}
 z_i & \sim D_{z_i}(g^{-1}(\theta_{z_i})) \\
 u_i & \sim D_{u_i}(g^{-1}(\theta_{u_i})) \\
-x | z_i, u_i & \sim D_x(g^{-1}(\textbf{C}\boldsymbol{\eta}_T)) \\ 
+x | z_i, u_i & \sim D_x(g^{-1}(\textbf{C}\boldsymbol{\beta}_T)) \\ 
 y | x, z_i, u_i & \sim D_y(g^{-1}(\textbf{X}\boldsymbol{\beta}_R), \xi_y),
 \end{split}
 \end{equation}
@@ -56,7 +57,7 @@ y | x, z_i, u_i & \sim D_y(g^{-1}(\textbf{X}\boldsymbol{\beta}_R), \xi_y),
 
 where \textbf{C} is a design matrix consisting of perfectly measured covariates and unmeasured confounder(s) and \textbf{X} is a design matrix of the treatment, covariates, and unmeasured confounder(s). 
 
-All arguments in `runm()` have a default value assigned other than $n$. So, in its simplest form, one can generate a data set consisting of 100 observations by calling `runm(100)`. The default arguments can be customized to the user's preference if there is a desired data generation structure. A more detailed example is below, assigned `df`, and will be the data frame used throughout the remainder of this vignette.
+All arguments in `runm()` have a default value assigned other than $n$. So, in its simplest form, one can generate a data set consisting of 100 observations by calling `runm(100)`. The default arguments can be customized to the user's preference if there is a desired data generation structure. A more detailed example is below, assigned `df`, and will be the data frame used throughout the remainder of this vignette. When the validation type is internal (default), the data will first be generated from some sample size `n`. Then, the proportion in `missing_prop` will set that percentage of the unmeasured confounder's observations to `NA`.
 
 ```{r, message=FALSE}
 library("unmconf")
@@ -64,6 +65,7 @@ library("bayesplot")
 library("ggplot2"); theme_set(theme_minimal())
 ```
 
+### Internal Validation
 
 ```{r}
 set.seed(13L)
@@ -87,8 +89,40 @@ df <-
 rbind(head(df, 5), tail(df, 5))
 ```
 
+### External Validation
 
-When the validation type is internal, the data will first be generated from some sample size `n`. Then, the proportion in `missing_prop` will set that percentage of the unmeasured confounder's observations to `NA`. For external validation, the sample size argument can be a vector of length 2 to represent the number of observations in the main study data and external validation data, respectively. The sample size argument can also be of length 1, where the sample size will be split in half for the two types of data (main study data will obtain the additional observation if `n` is odd). The main study data is generated in the same fashion as internal validation data, but all observations for unmeasured confounder(s) are missing. The external validation data is representative of the subjects in the control group, so the treatment variable, $x$ is set to 0 as well as its coefficient in the response model.
+For external validation, the sample size argument can be a vector of length 2 to represent the number of observations in the main study data and external validation data, respectively. The sample size argument can also be of length 1, where the sample size will be split in half for the two types of data (main study data will obtain the additional observation if `n` is odd). The main study data has the unmeasured confounders completely missing for all observations. The external data fully observes the unmeasured confounders but typically has no reference on the exposure-unmeasured confounder relationship. Thus, informative priors on the bias parameters for this relationship are needed to achieve convergence. That is, in the above model, $\gamma_X$ and $\delta_X$.
+
+If a user has a main study data set and an external validation data set that are collected and separate from one another, they can be joined together through `dplyr::bind_rows()`. This function binds the data sets by row and keeps all of the columns, even if the columns do not match between data sets. Say that a researcher has a main study data set with a binary outcome, a binary treatment, three perfectly measured standard normal covariates, and two unmeasured confounders that are completely missing. Further, say that the researcher also has an external validation data set with the same outcome, two of the perfectly measured covariates from the main study data, and the two unmeasured confounders completely observed. If the third covariate that is missing from the external validation data is deemed unimportant for modeling, then one can still perform inference using this data. An example of this scenario is below
+
+```{r}
+# Main Study Data
+M <- tibble::tibble(
+  "y" = rbinom(100, 1, .5),
+  "x" = rbinom(100, 1, .3),
+  "z1" = rnorm(100, 0, 1),
+  "z2" = rnorm(100, 0, 1),
+  "z3" = rnorm(100, 0, 1),
+  "u1" = NA, 
+  "u2" = NA
+)
+
+# External Validation Data
+EV <- tibble::tibble(
+  "y" = rbinom(100, 1, .5),
+  "z1" = rnorm(100, 0, 1),
+  "z2" = rnorm(100, 0, 1),
+  "u1" = rnorm(100, 0, 1), 
+  "u2" = rnorm(100, 0, 1)
+)
+
+df_ext <- dplyr::bind_rows(M, EV) |> 
+  dplyr::mutate(x = ifelse(is.na(x), 0, x))
+
+rbind(head(df_ext, 5), tail(df_ext, 5))
+```
+
+
 
 # Specifying and Fitting the Model
 
@@ -103,8 +137,9 @@ The R language provides a straightforward syntax for denoting linear models, typ
 
 To further customize the analysis, users can specify custom priors using the priors argument within `unm_glm()`. The format for specifying custom priors is `c("\{parameter\}[\{covariate\}]" = "\{distribution\}")`. If the user does not pre-specify informative prior distributions in the function call, the default priors mentioned previously will be used on the model parameters. Additionally, `unm_glm()` also accepts arguments that facilitate MCMC computation on the posterior distribution to be passed to `coda.samples`, such as such as `n.iter, n.adapt, thin,` and `n.chains`. The arguments specified have default values, but the user is encouraged to supply their own values given the lack of convergence that is sometimes observed when validation sample sizes are small or priors are particularly diffuse.
 
+### Internal Validation
 
-For instance, consider the three-level hierarchical model from the generated data set above, `df`, with a normal response, normal first unmeasured confounder, binary second unmeasured confounder, and three perfectly observed covariates. Further, let's say that, through expert opinion, we have prior information that the effect on $y$ from $u_1$, $\lambda_{u_1}$, is normally distributed with a mean of 0.5 and standard deviation of 1. JAGS parameterizes the normal distribution with precision over standard deviation, so we would use $\tau_{u_1} = 1 / \sigma_{u_1}^2 = 1$ for the prior distribution $\lambda_{u_1} \sim N(.5, \sigma_{u_1} = .5)$. Using `unm_glm()`, we fit:
+For instance, consider the three-level hierarchical model from the generated data set above, `df`, with a normal response, normal first unmeasured confounder, binary second unmeasured confounder, and three perfectly observed covariates. Further, let's say that, through expert opinion, we have prior information that the effect on $y$ from $u_1$, $\lambda_{u_1}$, is normally distributed with a mean of 0.5 and standard deviation of 1. JAGS parameterizes the normal distribution with precision rather than standard deviation, so we would use $\tau_{u_1} = 1 / \sigma_{u_1}^2 = 1$ for the prior distribution $\lambda_{u_1} \sim N(.5, \sigma_{u_1} = .5)$. Using `unm_glm()`, we fit:
 
 ```{r}
 unm_mod <- 
@@ -114,10 +149,29 @@ unm_mod <-
           family1 = gaussian(),
           family2 = gaussian(),
           family3 = binomial(),
-          priors = c("lambda[u1]" = "dnorm(.5, 1)"),
-          n.iter = 4000, n.adapt = 2000, thin = 1,
           data = df)
 ```
+
+
+### External Validation
+
+We fit the three-level hierarchical model from the external validation data set above, `df_ext`. Suppose that we have knowledge on the relationship between the treatment effect and both unmeasured confounders through expert opinion, where each relationship is normally distributed. JAGS parameterizes the normal distribution with precision rather than standard deviation. So, from expert opinion, we get the prior distributions $\gamma_X \sim N(1.1, 0.9)$ and $\delta_X \sim N(1.1, 4.5)$. Using `unm_glm()`, we fit:
+
+```{r, eval=FALSE}
+unm_mod_ext <- 
+  unm_glm(y ~ x + z1 + z2 + u1 + u2,     # y ~ . - z3,
+          u1 ~ x + z1 + z2 + u2,         # u1 ~ . - y - z3,
+          u2 ~ x + z1 + z2,              # u2 ~ . - y - u1 - z3,
+          family1 = binomial(),
+          family2 = gaussian(),
+          family3 = gaussian(),
+          priors = c("gamma[x]" = "dnorm(1.1, 0.9)",
+                     "delta[x]" = "dnorm(1.1, 4.5)"),
+          n.iter = 4000, n.adapt = 2000, thin = 1,
+          data = df_ext)
+```
+
+### Export JAGS Code
 
 By leveraging `unm_glm()`, users can conveniently implement complex Bayesian models, particularly those involving unmeasured confounders, without grappling with the intricacies of JAGS syntax or handling missing data. The three-stage Bayesian modeling structure of `unmconf` is currently set up to work with at most two unmeasured confounders. Instances may arise where the user may want to work with more than two unmeasured confounders. As an attempt to resolve this concern, the user can explicitly call the JAGS code that `unm_glm()` generates either through the argument `code_only = TRUE` in the function itself or through the separate function, `jags_code()`. With a starting point created by the three-stage model, the user should be able to identify the syntax for JAGS code and thus add the layer(s) to the hierarchical structure and the respective prior distribution(s). Stopping at two unmeasured confounders allows for the package to run with confidence in the instance that individuals do not check for convergence and report the results of a poor model. Below shows both ways to extract a model's JAGS code.
 
