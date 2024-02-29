@@ -8,7 +8,7 @@
 #'   poisson gaussian model.frame model.matrix model.offset family
 #' @importFrom janitor clean_names
 #' @importFrom glue glue
-#' @docType package
+#' @docType _PACKAGE
 #' @name unmconf
 #' @aliases unmconf unmconf-package
 NULL
