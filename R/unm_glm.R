@@ -475,7 +475,7 @@ unm_glm <- function(
 
     response_nuisance_priors <- switch(
       family1$family,
-      "gaussian" = g("tau_{y} ~ dt(0, 1, 3) I(0, )"),
+      "gaussian" = g("tau_{y} ~ dgamma(0.001, 0.001)"),
       "binomial" = " ",
       "Gamma" = g("alpha_{y} ~ dgamma(.1, .1)"),
       "poisson" = " "
@@ -496,7 +496,7 @@ unm_glm <- function(
 
   }
 
-  if (!is.null(u2)) {
+  if (grepl(paste(g("\\b{u2}\\b")), deparse(form2[[3]]))) {
     conf2_piece <- "+ inprod(U[i, 2], zeta)"
   } else {
     conf2_piece <- ""
@@ -515,7 +515,7 @@ unm_glm <- function(
 
     confounder1_nuisance_priors <- switch(
       family2$family,
-      "gaussian" = g("tau_{u1} ~ dt(0, 1, 3) I(0, )"),
+      "gaussian" = g("tau_{u1} ~ dgamma(0.001, 0.001)"),
       "binomial" = " ",
       "none" = ""
     )
@@ -548,7 +548,7 @@ unm_glm <- function(
 
     confounder2_nuisance_priors <- switch(
       family3$family,
-      "gaussian" = g("tau_{u2} ~ dt(0, 1, 3) I(0, )"),
+      "gaussian" = g("tau_{u2} ~ dgamma(0.001, 0.001)"),
       "binomial" = " ",
       "none" = ""
     )
@@ -588,8 +588,13 @@ unm_glm <- function(
   }
   (X <- X[, setdiff(colnames(X), colnames(U)), drop = FALSE])
 
-  (U2 <- W[, c(u2), drop = FALSE])
-  (W <- W[, setdiff(colnames(W), c(u2)), drop = FALSE])
+  if (grepl(paste(g("\\b{u2}\\b")), deparse(form2[[3]]))) {
+    (U2 <- W[, c(u2), drop = FALSE])
+  } else {
+    U2 <- matrix(ncol = 0, nrow = nrow(W))
+  }
+
+  (W <- W[, setdiff(colnames(W), colnames(U2)), drop = FALSE])
 
   # determine numbers of parameters
   p_be <- ncol(X)  # = # non-confounder params in response model
@@ -609,16 +614,16 @@ unm_glm <- function(
   pretty_W_vars <- gsub("\\(Intercept\\)", "1", W_vars)
   pretty_V_vars <- gsub("\\(Intercept\\)", "1", V_vars)
 
-  # make priors
-  jags_coefs <-
-    if (is.null(u1)) {
-      c( g("beta[{1:p_be}]") )
-    } else if (is.null(u2)) {
-      c( g("beta[{1:p_be}]"), g("lambda[{1:p_la}]"), g("gamma[{1:p_ga}]") )
-    } else {
-      c( g("beta[{1:p_be}]"), g("lambda[{1:p_la}]"), g("gamma[{1:p_ga}]"),
-         g("zeta[{1:p_ze}]"), g("delta[{1:p_de}]") )
-    }
+
+  # Make priors
+  jags_coefs <- c(
+    glue("beta[{1:p_be}]"),
+    if (!is.null(u1)) glue("lambda[{1:p_la}]"),
+    glue("gamma[{1:p_ga}]"),
+    if (p_ze > 0) glue("zeta[{1:p_ze}]"),  # Only include if p_ze > 0
+    if (!is.null(V) && p_de > 0) glue("delta[{1:p_de}]")  # Only include if p_de > 0
+  )
+
 
   real_coefs <- c( g("beta[{X_vars}]"), g("lambda[{U_vars}]"),
                    g("gamma[{W_vars}]"), g("zeta[{U2_vars}]"),
@@ -730,7 +735,7 @@ unm_glm <- function(
   # compile chain and adapt
   jm <- jags.model(filename, data = jd,
                    n.adapt = n.adapt, n.chains = n.chains,
-                   quiet = TRUE, ...
+                   quiet = quiet# ...
   )
 
   params_of_interest <- unique(sub("\\[.+\\]", "", real_coefs))
