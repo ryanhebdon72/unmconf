@@ -53,8 +53,8 @@
 #' (df <- runm(20, response = "norm"))
 #'
 #' (unm_mod <- unm_glm(
-#'   y ~ x + z1 + z2 + z3 + u1,  family1 = gaussian(),
-#'   u1 ~ x + z1 + z2 + z3,      family2 = gaussian(),
+#'   form1 = y ~ x + z1 + z2 + z3 + u1,  family1 = gaussian(),
+#'   form2 = u1 ~ x + z1 + z2 + z3,      family2 = gaussian(),
 #'   data = df
 #' ))
 #'
@@ -448,12 +448,9 @@ unm_glm <- function(
   u1 <- if (inherits(form2, "formula")) deparse(form2[[2]]) else NULL # e.g. "u1", character name of confounding var
   u2 <- if (inherits(form3, "formula")) deparse(form3[[2]]) else NULL # e.g. "u2", character name of confounding var
 
-  if (!is.null(u1) || !is.null(u2)) {
-    if (grepl(paste(g("\\b{u1}\\b"), g("\\b{u2}\\b"), sep = "|"), deparse(form1[[3]]))) {
-      conf_piece <- "+ inprod(U[i,], lambda)"
-    } else {
-      conf_piece <- ""
-    }
+  if (!(is.null(u1) || is.null(u2)) &&
+      grepl(paste(g("\\b{u1}\\b"), g("\\b{u2}\\b"), sep = "|"), deparse(form1[[3]]))) {
+    conf_piece <- "+ inprod(U[i,], lambda)"
   } else {
     conf_piece <- ""
   }
@@ -499,11 +496,13 @@ unm_glm <- function(
 
   }
 
-  if (grepl(paste(g("\\b{u2}\\b")), deparse(form2[[3]]))) {
+  if (!is.null(u2) && grepl(paste(g("\\b{u2}\\b")), deparse(form2[[3]]))) {
     conf2_piece <- "+ inprod(U[i, 2], zeta)"
   } else {
     conf2_piece <- ""
   }
+
+
 
   confounder1_model_code <- switch(
     family2$family,
@@ -591,10 +590,11 @@ unm_glm <- function(
   }
   (X <- X[, setdiff(colnames(X), colnames(U)), drop = FALSE])
 
-  if (grepl(paste(g("\\b{u2}\\b")), deparse(form2[[3]]))) {
+  if (!is.null(u2) && !is.null(W) &&
+      grepl(paste(g("\\b{u2}\\b")), deparse(form2[[3]]))) {
     (U2 <- W[, c(u2), drop = FALSE])
   } else {
-    U2 <- matrix(ncol = 0, nrow = nrow(W))
+    U2 <- NULL
   }
 
   (W <- W[, setdiff(colnames(W), colnames(U2)), drop = FALSE])
@@ -620,11 +620,11 @@ unm_glm <- function(
 
   # Make priors
   jags_coefs <- c(
-    glue("beta[{1:p_be}]"),
-    if (!is.null(u1)) glue("lambda[{1:p_la}]"),
-    glue("gamma[{1:p_ga}]"),
-    if (p_ze > 0) glue("zeta[{1:p_ze}]"),  # Only include if p_ze > 0
-    if (!is.null(V) && p_de > 0) glue("delta[{1:p_de}]")  # Only include if p_de > 0
+    g("beta[{1:p_be}]"),
+    if (!is.null(p_la)) g("lambda[{1:p_la}]"),
+    if (!is.null(p_ga)) g("gamma[{1:p_ga}]"),
+    if (!is.null(p_ze)) g("zeta[{1:p_ze}]"),  # Only include if p_ze > 0
+    if (!is.null(p_de)) g("delta[{1:p_de}]")  # Only include if p_de > 0
   )
 
 
