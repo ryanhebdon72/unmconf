@@ -454,6 +454,8 @@ unm_glm <- function(
     } else {
       conf_piece <- ""
     }
+  } else {
+    conf_piece <- ""
   }
 
   response_model_code <- switch(
