@@ -363,7 +363,7 @@
 #' coef(unm_mod)
 #'
 #' unm_glm(
-#'   ~ x + z + u1 + u2, family1 = gaussian(),
+#'   y ~ x + z + u1 + u2, family1 = gaussian(),
 #'   u1 ~ x + z + u2,   family2 = gaussian(),
 #'   u2 ~ x + z,        family3 = gaussian(),
 #'   data = df,
