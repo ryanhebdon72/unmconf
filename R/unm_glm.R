@@ -448,11 +448,12 @@ unm_glm <- function(
   u1 <- if (inherits(form2, "formula")) deparse(form2[[2]]) else NULL # e.g. "u1", character name of confounding var
   u2 <- if (inherits(form3, "formula")) deparse(form3[[2]]) else NULL # e.g. "u2", character name of confounding var
 
-
-  if (grepl(paste(g("\\b{u1}\\b"), g("\\b{u2}\\b"), sep = "|"), deparse(form1[[3]]))) {
-    conf_piece <- "+ inprod(U[i,], lambda)"
-  } else {
-    conf_piece <- ""
+  if (!is.null(u1) || !is.null(u2)) {
+    if (grepl(paste(g("\\b{u1}\\b"), g("\\b{u2}\\b"), sep = "|"), deparse(form1[[3]]))) {
+      conf_piece <- "+ inprod(U[i,], lambda)"
+    } else {
+      conf_piece <- ""
+    }
   }
 
   response_model_code <- switch(
