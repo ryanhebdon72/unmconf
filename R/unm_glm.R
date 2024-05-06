@@ -29,12 +29,10 @@
 #'   `options(unm_progress.bar = "text")`.
 #' @param code_only Should only the code be created?
 #' @param priors Custom priors to use on regression coefficients, see examples.
-#' @param
-#'   response_nuisance_priors,confounder1_nuisance_priors,confounder2_nuisance_priors
+#' @param response_nuisance_priors,confounder1_nuisance_priors,confounder2_nuisance_priors
 #'   JAGS code for the nuisance priors on parameters in a JAGS model (see
 #'   examples)
-#' @param
-#'   response_params_to_track,confounder1_params_to_track,confounder2_params_to_track
+#' @param response_params_to_track,confounder1_params_to_track,confounder2_params_to_track
 #'   Additional parameters to track when nuisance parameter priors are used (see
 #'   examples)
 #' @param ... Additional arguments to pass into [rjags::jags.model()], such as

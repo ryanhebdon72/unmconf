@@ -21,24 +21,25 @@ knitr::opts_chunk$set(
 
 ## Bayesian Multi-Staged Regression Model
 
-For the statistical model, we denote the continuous or discrete outcome as $Y$, the dichotomous main exposure variable as $X$, the $p \times 1$ vector of perfectly observed covariates relating to both $Y$ and $X$ is denoted $C$, and the unmeasured confounder(s) relating to both $Y$ and $X$ are denoted $U_j, j = 1, 2$. These unmeasured confounders can be either binary or normally distributed. Consider the case where $j = 2$. Then,
+For the statistical model, we denote the continuous or discrete response $Y$, the binary main exposure variable $X$, the vector of $p$ other perfectly observed covariates $\boldsymbol{C}$, and the unmeasured confounder(s) relating to both $Y$ and $X$ $U$. In the event of more unmeasured covariates, we denote them $U_{1}$, $U_{2}$, and so forth; these unmeasured confounders can be either binary or normally distributed. 
 
-```{=tex}
-\begin{equation}
+In the scenario where there is a single unmeasured confounder, the joint distribution can be factorized as $f(y, u|x, \boldsymbol{c}) = f(y|x, u, \boldsymbol{c}) f(u|x, \boldsymbol{c})$. For the second unmeasured confounder, the joint distribution can be factorized as $f(y, u_{1}, u_{2}|x, \boldsymbol{c}) = f(y|x, \boldsymbol{c}, u_{1}, u_{2}) f(u_{1}|x, \boldsymbol{c}, u_{2}) f(u_{2}|x, \boldsymbol{c})$, giving the multi-level model:
+\begin{equation}\label{unmconf-three-stage}
 \begin{split}
-    y|x, u, z & \sim D_y(g^{-1}({\beta}'\textbf{C} + {\lambda}'\textbf{U}), \xi_y) \\
-    u_1|x, z & \sim D_{u_1}(g^{-1}({\gamma}'\textbf{C} + \zeta U_2), \xi_{u_1}) \\
-    u_2|x, z & \sim D_{u_2}(g^{-1}({\delta}'\textbf{C}), \xi_{u_2}),
+    Y|x, \boldsymbol{c}, u_{1}, u_{2} & \ \ \sim  \ \ D_{Y}(g_Y^{-1}(\boldsymbol{v}'\boldsymbol{\beta} +\boldsymbol{\lambda}'\boldsymbol{u}), \ \xi_y) \\
+    U_{1}|x, \boldsymbol{c}, u_{2}    & \ \ \sim  \ \ D_{U_{1}}(g_{U_1}^{-1}(\boldsymbol{v}'\boldsymbol{\gamma} + \zeta u_{2}), \ \xi_{u_{1}}) \\
+    U_{2}|x, \boldsymbol{c}           & \ \ \sim  \ \ D_{U_{2}}(g_{U_2}^{-1}(\boldsymbol{v}'\boldsymbol{\delta}), \ \xi_{u_{2}}),
 \end{split}
 \end{equation}
-```
 
-where \textbf{C} denotes the design matrix comprised of the main exposure variable, $X$, and all of the perfectly observed covariates. This model is completed by the specification of a link function, $g$, for some distribution, $D$. Additional parameters for certain distributions are denoted by $\xi_y$ and $\xi_u$. Examples of these would be $\sigma^2$ for the variance of a normal distribution or $\alpha$ for the shape parameter in the gamma distribution. `unmconf` allows for the user to work with a response from the normal, Poisson, gamma, or binomial distribution and unmeasured confounder(s) from the normal or binomial distribution. The package supports identity (normal), log (Poisson or gamma), and logit (Bernoulli) link functions.
+where $\boldsymbol{v}' = [x~\boldsymbol{c}']'$ denotes the vector of the main exposure variable and all of the perfectly observed covariates and $\boldsymbol{u}' = [\boldsymbol{u_1}, \boldsymbol{u_2}]'$ denotes the vector of two unmeasured confounders in the response model. This model is completed by the specification of a link function $g_*$ and some family of distributions $D_{*}$. Additional parameters for certain distributions--if any--are denoted $\xi_{y}, \xi_{u_1}, \xi_{u_2}$. Examples of these would be $\sigma^2$ for the variance of a normal distribution or $\alpha$ for the shape parameter in the gamma distribution. `unmconf` allows for the user to work with a response from the normal, Poisson, gamma, or binomial distribution and unmeasured confounder(s) from the normal or binomial distribution. The package supports identity (normal), log (Poisson or gamma), and logit (Bernoulli) link functions.
 
 
 ### Prior Structure
 
-Prior distributions for the model parameters will be jointly defined as ${\pi}({\theta})$, where $\theta = (\beta, \lambda, \gamma, \zeta, \delta)$. The default prior structure is weakly informative. When the response is binary or Poisson, the regression coefficients have a normal prior with a mean of 0 and precision of 0.1. When the response is either normal or gamma, the regression coefficients have a normal prior with a mean of 0 and precision of 0.001. Depending on the family specified for the response and/or unmeasured confounder(s), nuisance parameters may be present and, thus, will also require a prior distribution. The precision for a normal response or normal unmeasured confounder will have a half Student's t-distribution with 3 degrees of freedom as the prior. The nuisance parameter, $\alpha_y$, for a gamma response has a gamma distribution as the prior with both scale and rate set to 0.1. The aforementioned nuisance parameters are tracked and posterior summaries are provided as a default setting in the package, but this can be modified.
+Prior distributions for the model parameters will be jointly defined as $\pi(\boldsymbol{\theta})$, where $\boldsymbol{\theta} = (\boldsymbol{\beta}, \boldsymbol{\lambda}, \boldsymbol{\gamma}, \zeta, \boldsymbol{\delta}, \boldsymbol{\xi})$. The default prior structure is weakly informative. The regression coefficients have a relatively non-informative prior with a mean of 0 and precision (inverse of the variance) of 0.1 when the response is discrete. When the response is continuous, the regression coefficients have a relatively non-informative prior with a mean of 0 and precision of 0.001. To further customize the analysis, users can specify custom priors using the `priors` argument within the modeling function, `unm_glm()`. The format for specifying custom priors is `c("\{parameter\}[\{covariate\}]" = "\{distribution\}")`.
+
+Families specified for the response and unmeasured confounder(s) may present nuisance parameters, necessitating the inclusion of their prior distributions as well. The precision parameter, $\tau_*$, on a normal response or normal unmeasured confounder will have a Gamma(0.001, 0.001) as the default prior. Priors can also be elicited in terms of $\sigma_*$ or $\sigma_*^2$ through \code{priors}. The nuisance parameter, $\alpha_y$, for a gamma response has a gamma distribution as the prior with both scale and rate set to 0.1. The aforementioned nuisance parameters are tracked and posterior summaries are provided as a default setting in the package, but this can be modified.
 
 # Generating Data
 
@@ -47,17 +48,16 @@ The function `runm()` is used to generate the data. In the workflow of this pack
 ```{=tex}
 \begin{equation}
 \begin{split}
-z_i & \sim D_{z_i}(g^{-1}(\theta_{z_i})) \\
-u_i & \sim D_{u_i}(g^{-1}(\theta_{u_i})) \\
-x | z_i, u_i & \sim D_x(g^{-1}(\textbf{C}\boldsymbol{\beta}_T)) \\ 
-y | x, z_i, u_i & \sim D_y(g^{-1}(\textbf{X}\boldsymbol{\beta}_R), \xi_y),
+\boldsymbol{C} &  \ \ \sim \ \ D_{\boldsymbol{C}}(g^{-1}_{\boldsymbol{C}}(\theta_{\boldsymbol{C}})) \\
+U_1 &  \ \ \sim \ \ D_{U_1}(g^{-1}_{U_1}(\theta_{U_1}), \xi_{u_1}) \\
+U_2 & \ \ \sim \ \ D_{U_2}(g^{-1}_{U_2}(\theta_{U_2}), \xi_{u_2}) \\
+X | \boldsymbol{c}, u_{1}, u_{2} & \ \ \sim \ \ \text{Bernoulli}(\text{logit}^{-1}(\boldsymbol{w}'\boldsymbol{\beta}_T)) \\ 
+Y| x, \boldsymbol{c}, u_{1}, u_{2} & \ \ \sim  \ \ D_{Y}(g^{-1}_Y(\boldsymbol{z}'\boldsymbol{\beta_R}), \ \xi_y),
 \end{split}
 \end{equation}
 ```
 
-where \textbf{C} is a design matrix consisting of perfectly measured covariates and unmeasured confounder(s) and \textbf{X} is a design matrix of the treatment, covariates, and unmeasured confounder(s). 
-
-All arguments in `runm()` have a default value assigned other than $n$. So, in its simplest form, one can generate a data set consisting of 100 observations by calling `runm(100)`. The default arguments can be customized to the user's preference if there is a desired data generation structure. A more detailed example is below, assigned `df`, and will be the data frame used throughout the remainder of this vignette. When the validation type is internal (default), the data will first be generated from some sample size `n`. Then, the proportion in `missing_prop` will set that percentage of the unmeasured confounder's observations to `NA`.
+where $\boldsymbol{w}' = [\boldsymbol{c}'~u_1~u_2]'$ and $\boldsymbol{z}' = [x~\boldsymbol{c}'~u_1~u_2]'$. All arguments in `runm()` have a default value assigned other than $n$. So, in its simplest form, one can generate a data set consisting of 100 observations by calling `runm(100)`. The default arguments can be customized to the user's preference if there is a desired data generation structure. A more detailed example is below, assigned `df`, and will be the data frame used throughout the remainder of this vignette. When the validation type is internal (default), the data will first be generated from some sample size `n`. Then, the proportion in `missing_prop` will set that percentage of the unmeasured confounder's observations to `NA`.
 
 ```{r, message=FALSE}
 library("unmconf")
@@ -91,7 +91,7 @@ rbind(head(df, 5), tail(df, 5))
 
 ### External Validation
 
-For external validation, the sample size argument can be a vector of length 2 to represent the number of observations in the main study data and external validation data, respectively. The sample size argument can also be of length 1, where the sample size will be split in half for the two types of data (main study data will obtain the additional observation if `n` is odd). The main study data has the unmeasured confounders completely missing for all observations. The external data fully observes the unmeasured confounders but typically has no reference on the exposure-unmeasured confounder relationship. Thus, informative priors on the bias parameters for this relationship are needed to achieve convergence. That is, in the above model, $\gamma_X$ and $\delta_X$.
+For external validation, the sample size argument can be a vector of length 2 to represent the number of observations in the main study data and external validation data, respectively. The sample size argument can also be of length 1, where the sample size will be split in half for the two types of data (main study data will obtain the additional observation if `n` is odd). The main study data has the unmeasured confounders completely missing for all observations. The external data fully observes the unmeasured confounders but typically has no reference on the exposure-unmeasured confounder relationship. Thus, informative priors on the bias parameters for this relationship are needed to achieve convergence. That is, in the above model, $\gamma_x$ and $\delta_x$.
 
 If a user has a main study data set and an external validation data set that are collected and separate from one another, they can be joined together through `dplyr::bind_rows()`. This function binds the data sets by row and keeps all of the columns, even if the columns do not match between data sets. Say that a researcher has a main study data set with a binary outcome, a binary treatment, three perfectly measured standard normal covariates, and two unmeasured confounders that are completely missing. Further, say that the researcher also has an external validation data set with the same outcome, two of the perfectly measured covariates from the main study data, and the two unmeasured confounders completely observed. If the third covariate that is missing from the external validation data is deemed unimportant for modeling, then one can still perform inference using this data. An example of this scenario is below
 
@@ -139,7 +139,7 @@ To further customize the analysis, users can specify custom priors using the pri
 
 ### Internal Validation
 
-For instance, consider the three-level hierarchical model from the generated data set above, `df`, with a normal response, normal first unmeasured confounder, binary second unmeasured confounder, and three perfectly observed covariates. Further, let's say that, through expert opinion, we have prior information that the effect on $y$ from $u_1$, $\lambda_{u_1}$, is normally distributed with a mean of 0.5 and standard deviation of 1. JAGS parameterizes the normal distribution with precision rather than standard deviation, so we would use $\tau_{u_1} = 1 / \sigma_{u_1}^2 = 1$ for the prior distribution $\lambda_{u_1} \sim N(.5, \sigma_{u_1} = .5)$. Using `unm_glm()`, we fit:
+For instance, consider the three-level hierarchical model from the generated data set above, `df`, with a normal response, normal first unmeasured confounder, binary second unmeasured confounder, and three perfectly observed covariates. Further, let's say that, through expert opinion, we have prior information that the effect on $y$ from $u_1$, $\lambda_{u_1}$, is normally distributed with a mean of 0.5 and standard deviation of 1. JAGS parameterizes the normal distribution with precision rather than standard deviation, so we would use $\tau_{u_1} = 1 / \sigma_{u_1}^2 = 1$ for the prior distribution $\lambda_{u_1} \sim N(.5, \tau_{u_1} = 1)$. Using `unm_glm()`, we fit:
 
 ```{r}
 unm_mod <- 
@@ -149,13 +149,14 @@ unm_mod <-
           family1 = gaussian(),
           family2 = gaussian(),
           family3 = binomial(),
+          priors = c("lambda[u1]" = "dnorm(.5, 1)"),
           data = df)
 ```
 
 
 ### External Validation
 
-We fit the three-level hierarchical model from the external validation data set above, `df_ext`. Suppose that we have knowledge on the relationship between the treatment effect and both unmeasured confounders through expert opinion, where each relationship is normally distributed. JAGS parameterizes the normal distribution with precision rather than standard deviation. So, from expert opinion, we get the prior distributions $\gamma_X \sim N(1.1, 0.9)$ and $\delta_X \sim N(1.1, 4.5)$. Using `unm_glm()`, we fit:
+We fit the three-level hierarchical model from the external validation data set above, `df_ext`. Suppose that we have knowledge on the relationship between the treatment effect and both unmeasured confounders through expert opinion, where each relationship is normally distributed. JAGS parameterizes the normal distribution with precision rather than standard deviation. So, from expert opinion, we get the prior distributions $\gamma_x \sim N(1.1, 0.9)$ and $\delta_x \sim N(1.1, 4.5)$. Using `unm_glm()`, we fit:
 
 ```{r, eval=FALSE}
 unm_mod_ext <- 
@@ -185,11 +186,11 @@ jags_code(unm_mod)
 After the model is fit and before using the MCMC samples for inference, it is necessary for users assess whether the chains have converged appropriately. Hierarchical models with unmeasured confounding are often confronted with convergence issues. To aid in chain convergence, we heavily increased the burn-in length and MCMC iterations from the default values of 1000 and 2000 in the function `unm_glm()` to 6000 and 10000, respectively. Additional checks include the posterior kernel density plots appearing relatively smooth in shape and the trace, or history, plots of the chains should have very similar values across the iterations (i.e., they "mix" well and the chains intermingle).
 
 <!-- [@gabry2019] -->
-The `bayesplot` package provides a variety of `ggplot2`-based plotting functions for use after fitting Bayesian models. `bayesplot::mcmc_hist()` plots a histogram of the MCMC draws from all chains, and `bayesplot::mcmc_trace()` performs a trace plot of the chains. Given that $\beta_X$ is our parameter of interest, we only displayed the density and trace plots of this parameter below. The histogram appears smooth and without any jaggedness. The trace plot appears to mix well, as one cannot differentiate or identify patterns in the chains across the iterations for this model. Thus, there is no lack of convergence evident here. All parameters in the model upheld convergence standards. 
+The `bayesplot` package provides a variety of `ggplot2`-based plotting functions for use after fitting Bayesian models. `bayesplot::mcmc_hist()` plots a histogram of the MCMC draws from all chains, and `bayesplot::mcmc_trace()` performs a trace plot of the chains. Given that $\beta_x$ is our parameter of interest, we only displayed the density and trace plots of this parameter below. The histogram appears smooth and without any jaggedness. The trace plot appears to mix well, as one cannot differentiate or identify patterns in the chains across the iterations for this model. Thus, there is no lack of convergence evident here. All parameters in the model upheld convergence standards. 
 
 ```{r}
-mcmc_hist(unm_mod, pars = "beta[x]")
-mcmc_trace(unm_mod, pars = "beta[x]")
+bayesplot::mcmc_hist(unm_mod, pars = "beta[x]")
+bayesplot::mcmc_trace(unm_mod, pars = "beta[x]")
 ```
 
 
@@ -250,7 +251,7 @@ unm_backfill(df, unm_mod)[16:25, ]
 To visualize the results from the model fit, the quantile-based posterior credible intervals can be drawn using `bayesplot::mcmc_intervals()`. A credible interval plot from the worked example is below. This plots the credible intervals for all parameters from the posterior draws of all the chains. We modify the default setting for the outer credible interval to be 0.95 for comparison with the output results from `unm_summary()`. The light blue circle in the middle of each parameter's interval portrays the posterior median. The bold, dark blue line displays the 50% credible interval and the thin, blue line covers the 95% credible interval. For simulation studies, where the true parameter values are known, calling the argument `true_params` will add a layer of light red circles to each credible interval to illustrate the true value used to generate the data. Here, the gamma and delta parameters do not have a true value because we generated the unmeasured confounders $u_1$ and $u_2$ as independent normal/Bernoulli random variables.
 
 ```{r, message=FALSE, warning=FALSE}
-mcmc_intervals(unm_mod, prob_outer = .95, regex_pars = "(beta|lambda|gamma|delta|zeta).+") +
+bayesplot::mcmc_intervals(unm_mod, prob_outer = .95, regex_pars = "(beta|lambda|gamma|delta|zeta).+") +
   geom_point(
     aes(value, name), data = tibble::enframe(attr(df, "params")) |>
       dplyr::mutate(name = gsub("int", "1", name)),
