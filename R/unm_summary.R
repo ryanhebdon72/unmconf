@@ -132,7 +132,7 @@
 
 #' @export
 #' @rdname unm_summary
-unm_summary <- function(mod, data, quantiles = c(.025, .975)) {
+unm_summary <- function(mod, data, quantiles = c(.025, .5, .975)) {
 
   param <- NULL; rm(param)
   true_value <- NULL; rm(true_value)
@@ -151,7 +151,9 @@ unm_summary <- function(mod, data, quantiles = c(.025, .975)) {
     tibble::as_tibble(rownames = "param")
 
   out <- stats |>
-    dplyr::left_join(cis, by = "param")
+    dplyr::left_join(cis, by = "param") |>
+    dplyr::mutate("r_hat" = gelman.diag(mod)[[1]][, 2],
+                  "ess" = effectiveSize(mod))
 
   if (!missing(data)) {
     out <- out |>
