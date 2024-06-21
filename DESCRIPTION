@@ -14,7 +14,7 @@ Authors@R:
     person(given = "Xiang", family = "Zhang", role = c("aut"),
            email = "Xiang.Zhang@cslbehring.com"))
 Maintainer: David Kahle <david@kahle.io>
-Description: Tools for fitting and assessing Bayesian multi-staged regression 
+Description: Tools for fitting and assessing Bayesian multilevel regression 
   models that account for unmeasured confounders.
 SystemRequirements: JAGS >= 4.3.0 (http://mcmc-jags.sourceforge.net)
 License: MIT + file LICENSE

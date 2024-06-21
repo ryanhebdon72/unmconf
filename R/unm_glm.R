@@ -1,16 +1,16 @@
-#' Fitting Multi-Staged Bayesian Regression Model with Unmeasured Confounders
+#' Fitting Multilevel Bayesian Regression Model with Unmeasured Confounders
 #'
-#' [unm_glm()] fits a multi-staged Bayesian regression model that accounts for
+#' [unm_glm()] fits a multilevel Bayesian regression model that accounts for
 #' unmeasured confounders. Users can input model information into [unm_glm()] in
 #' a similar manner as they would for the standard [stats::glm()] function,
 #' providing arguments like `formula`, `family`, and `data`. Results are stored
 #' as MCMC iterations.
 #'
-#' @param form1 The formula specification for the response model (stage I)
+#' @param form1 The formula specification for the response model (Level I)
 #' @param form2 The formula specification for the first unmeasured confounder
-#'   model (stage II)
+#'   model (Level II)
 #' @param form3 The formula specification for the second unmeasured confounder
-#'   model (stage III)
+#'   model (Level III)
 #' @param family1,family2,family3 The family object, communicating the types of
 #'   models to be used for response (`form1`) and unmeasured confounder (`form2,
 #'   form3`) models. See [stats::family()] for details
@@ -44,7 +44,7 @@
 #' @seealso [runm()], [rjags::dic.samples()]
 #' @examples
 #'
-#' # ~~ One Unmeasured Confounder Examples (II-Stage Model) ~~
+#' # ~~ One Unmeasured Confounder Examples (II-Level Model) ~~
 #'
 #'
 #' # normal response, normal confounder model with internally validated data
@@ -332,7 +332,7 @@
 #' ))
 #' jags_code(unm_mod)
 #'
-#' # ~~ Two Unmeasured Confounders Examples (III-Stage Model) ~~
+#' # ~~ Two Unmeasured Confounders Examples (III-Level Model) ~~
 #' # a normal-normal-normal model - internal validation
 #' (df <- runm(
 #'   50,
