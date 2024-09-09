@@ -6,7 +6,7 @@
 \alias{unm_dic}
 \title{Generate synthetic data}
 \usage{
-unm_summary(mod, data, quantiles = c(0.025, 0.975))
+unm_summary(mod, data, quantiles = c(0.025, 0.5, 0.975))
 
 unm_backfill(data, mod)
 
@@ -29,7 +29,7 @@ the posterior distribution.
 }
 \examples{
 
-# ~~ One Unmeasured Confounder Examples (II-Stage Model) ~~
+# ~~ One Unmeasured Confounder Examples (II-Level Model) ~~
 
 # normal response, normal confounder model with internally validated data
 (df <- runm(20, response = "norm"))
@@ -93,7 +93,7 @@ coef(unm_mod)
 unm_backfill(df, unm_mod)
 
 
-# ~~ Two Unmeasured Confounders Examples (III-Stage Model) ~~
+# ~~ Two Unmeasured Confounders Examples (III-Level Model) ~~
 # a normal-normal-normal model - internal validation
 (df <- runm(
   50,
