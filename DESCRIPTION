@@ -1,7 +1,7 @@
 Package: unmconf
 Type: Package
 Title: Modeling with Unmeasured Confounding
-Version: 0.1.0
+Version: 1.0.0
 Authors@R: 
     c(person(given = "Ryan", family = "Hebdon", role = c("aut"),
            email = "ryan_hebdon@baylor.edu"),
