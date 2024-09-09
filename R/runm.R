@@ -106,7 +106,8 @@ runm <- function(
     n,
     type = "int",
     missing_prop = .80,
-    response = "bin", response_param = NULL,
+    response = "bin",
+    response_param,
     response_model_coefs = c("int" = -1, "z1" = .5, "z2" = .5, "z3" = .5,
                              "u1" = .5, "x" = .5),
     treatment_model_coefs = c("int" = -1, "z1" = .5, "z2" = .5, "z3" = .5,
@@ -270,7 +271,7 @@ runm_full <- function(
   (th <- be)
 
 
-  (if (is.null(response_param)) {
+  (if (missing(response_param)) {
     nuis_param <- switch(response,
                          "norm" = c("si_y" = 1),
                          "gam" = c("al_y" = 2))

@@ -1,16 +1,16 @@
-#' Fitting Multi-Staged Bayesian Regression Model with Unmeasured Confounders
+#' Fitting Multilevel Bayesian Regression Model with Unmeasured Confounders
 #'
-#' [unm_glm()] fits a multi-staged Bayesian regression model that accounts for
+#' [unm_glm()] fits a multilevel Bayesian regression model that accounts for
 #' unmeasured confounders. Users can input model information into [unm_glm()] in
 #' a similar manner as they would for the standard [stats::glm()] function,
 #' providing arguments like `formula`, `family`, and `data`. Results are stored
 #' as MCMC iterations.
 #'
-#' @param form1 The formula specification for the response model (stage I)
+#' @param form1 The formula specification for the response model (Level I)
 #' @param form2 The formula specification for the first unmeasured confounder
-#'   model (stage II)
+#'   model (Level II)
 #' @param form3 The formula specification for the second unmeasured confounder
-#'   model (stage III)
+#'   model (Level III)
 #' @param family1,family2,family3 The family object, communicating the types of
 #'   models to be used for response (`form1`) and unmeasured confounder (`form2,
 #'   form3`) models. See [stats::family()] for details
@@ -29,12 +29,10 @@
 #'   `options(unm_progress.bar = "text")`.
 #' @param code_only Should only the code be created?
 #' @param priors Custom priors to use on regression coefficients, see examples.
-#' @param
-#'   response_nuisance_priors,confounder1_nuisance_priors,confounder2_nuisance_priors
+#' @param response_nuisance_priors,confounder1_nuisance_priors,confounder2_nuisance_priors
 #'   JAGS code for the nuisance priors on parameters in a JAGS model (see
 #'   examples)
-#' @param
-#'   response_params_to_track,confounder1_params_to_track,confounder2_params_to_track
+#' @param response_params_to_track,confounder1_params_to_track,confounder2_params_to_track
 #'   Additional parameters to track when nuisance parameter priors are used (see
 #'   examples)
 #' @param ... Additional arguments to pass into [rjags::jags.model()], such as
@@ -46,15 +44,15 @@
 #' @seealso [runm()], [rjags::dic.samples()]
 #' @examples
 #'
-#' # ~~ One Unmeasured Confounder Examples (II-Stage Model) ~~
+#' # ~~ One Unmeasured Confounder Examples (II-Level Model) ~~
 #'
 #'
 #' # normal response, normal confounder model with internally validated data
 #' (df <- runm(20, response = "norm"))
 #'
 #' (unm_mod <- unm_glm(
-#'   y ~ x + z1 + z2 + z3 + u1,  family1 = gaussian(),
-#'   u1 ~ x + z1 + z2 + z3,      family2 = gaussian(),
+#'   form1 = y ~ x + z1 + z2 + z3 + u1,  family1 = gaussian(),
+#'   form2 = u1 ~ x + z1 + z2 + z3,      family2 = gaussian(),
 #'   data = df
 #' ))
 #'
@@ -334,7 +332,7 @@
 #' ))
 #' jags_code(unm_mod)
 #'
-#' # ~~ Two Unmeasured Confounders Examples (III-Stage Model) ~~
+#' # ~~ Two Unmeasured Confounders Examples (III-Level Model) ~~
 #' # a normal-normal-normal model - internal validation
 #' (df <- runm(
 #'   50,
@@ -363,7 +361,7 @@
 #' coef(unm_mod)
 #'
 #' unm_glm(
-#'   ~ x + z + u1 + u2, family1 = gaussian(),
+#'   y ~ x + z + u1 + u2, family1 = gaussian(),
 #'   u1 ~ x + z + u2,   family2 = gaussian(),
 #'   u2 ~ x + z,        family3 = gaussian(),
 #'   data = df,
@@ -448,8 +446,8 @@ unm_glm <- function(
   u1 <- if (inherits(form2, "formula")) deparse(form2[[2]]) else NULL # e.g. "u1", character name of confounding var
   u2 <- if (inherits(form3, "formula")) deparse(form3[[2]]) else NULL # e.g. "u2", character name of confounding var
 
-
-  if (grepl(paste(g("\\b{u1}\\b"), g("\\b{u2}\\b"), sep = "|"), deparse(form1[[3]]))) {
+  if (!(is.null(u1) || is.null(u2)) &&
+      grepl(paste(g("\\b{u1}\\b"), g("\\b{u2}\\b"), sep = "|"), deparse(form1[[3]]))) {
     conf_piece <- "+ inprod(U[i,], lambda)"
   } else {
     conf_piece <- ""
@@ -475,7 +473,7 @@ unm_glm <- function(
 
     response_nuisance_priors <- switch(
       family1$family,
-      "gaussian" = g("tau_{y} ~ dt(0, 1, 3) I(0, )"),
+      "gaussian" = g("tau_{y} ~ dgamma(0.001, 0.001)"),
       "binomial" = " ",
       "Gamma" = g("alpha_{y} ~ dgamma(.1, .1)"),
       "poisson" = " "
@@ -496,11 +494,13 @@ unm_glm <- function(
 
   }
 
-  if (!is.null(u2)) {
+  if (!is.null(u2) && grepl(paste(g("\\b{u2}\\b")), deparse(form2[[3]]))) {
     conf2_piece <- "+ inprod(U[i, 2], zeta)"
   } else {
     conf2_piece <- ""
   }
+
+
 
   confounder1_model_code <- switch(
     family2$family,
@@ -515,7 +515,7 @@ unm_glm <- function(
 
     confounder1_nuisance_priors <- switch(
       family2$family,
-      "gaussian" = g("tau_{u1} ~ dt(0, 1, 3) I(0, )"),
+      "gaussian" = g("tau_{u1} ~ dgamma(0.001, 0.001)"),
       "binomial" = " ",
       "none" = ""
     )
@@ -548,7 +548,7 @@ unm_glm <- function(
 
     confounder2_nuisance_priors <- switch(
       family3$family,
-      "gaussian" = g("tau_{u2} ~ dt(0, 1, 3) I(0, )"),
+      "gaussian" = g("tau_{u2} ~ dgamma(0.001, 0.001)"),
       "binomial" = " ",
       "none" = ""
     )
@@ -588,8 +588,14 @@ unm_glm <- function(
   }
   (X <- X[, setdiff(colnames(X), colnames(U)), drop = FALSE])
 
-  (U2 <- W[, c(u2), drop = FALSE])
-  (W <- W[, setdiff(colnames(W), c(u2)), drop = FALSE])
+  if (!is.null(u2) && !is.null(W) &&
+      grepl(paste(g("\\b{u2}\\b")), deparse(form2[[3]]))) {
+    (U2 <- W[, c(u2), drop = FALSE])
+  } else {
+    U2 <- NULL
+  }
+
+  (W <- W[, setdiff(colnames(W), colnames(U2)), drop = FALSE])
 
   # determine numbers of parameters
   p_be <- ncol(X)  # = # non-confounder params in response model
@@ -609,16 +615,16 @@ unm_glm <- function(
   pretty_W_vars <- gsub("\\(Intercept\\)", "1", W_vars)
   pretty_V_vars <- gsub("\\(Intercept\\)", "1", V_vars)
 
-  # make priors
-  jags_coefs <-
-    if (is.null(u1)) {
-      c( g("beta[{1:p_be}]") )
-    } else if (is.null(u2)) {
-      c( g("beta[{1:p_be}]"), g("lambda[{1:p_la}]"), g("gamma[{1:p_ga}]") )
-    } else {
-      c( g("beta[{1:p_be}]"), g("lambda[{1:p_la}]"), g("gamma[{1:p_ga}]"),
-         g("zeta[{1:p_ze}]"), g("delta[{1:p_de}]") )
-    }
+
+  # Make priors
+  jags_coefs <- c(
+    g("beta[{1:p_be}]"),
+    if (!is.null(p_la)) g("lambda[{1:p_la}]"),
+    if (!is.null(p_ga)) g("gamma[{1:p_ga}]"),
+    if (!is.null(p_ze)) g("zeta[{1:p_ze}]"),  # Only include if p_ze > 0
+    if (!is.null(p_de)) g("delta[{1:p_de}]")  # Only include if p_de > 0
+  )
+
 
   real_coefs <- c( g("beta[{X_vars}]"), g("lambda[{U_vars}]"),
                    g("gamma[{W_vars}]"), g("zeta[{U2_vars}]"),
@@ -730,7 +736,7 @@ unm_glm <- function(
   # compile chain and adapt
   jm <- jags.model(filename, data = jd,
                    n.adapt = n.adapt, n.chains = n.chains,
-                   quiet = TRUE, ...
+                   quiet = quiet# ...
   )
 
   params_of_interest <- unique(sub("\\[.+\\]", "", real_coefs))

@@ -5,7 +5,7 @@
 \alias{jags_code}
 \alias{print.unm_int}
 \alias{coef.unm_int}
-\title{Fitting Multi-Staged Bayesian Regression Model with Unmeasured Confounders}
+\title{Fitting Multilevel Bayesian Regression Model with Unmeasured Confounders}
 \usage{
 unm_glm(
   form1,
@@ -40,13 +40,13 @@ jags_code(mod)
 \method{coef}{unm_int}(object, ...)
 }
 \arguments{
-\item{form1}{The formula specification for the response model (stage I)}
+\item{form1}{The formula specification for the response model (Level I)}
 
 \item{form2}{The formula specification for the first unmeasured confounder
-model (stage II)}
+model (Level II)}
 
 \item{form3}{The formula specification for the second unmeasured confounder
-model (stage III)}
+model (Level III)}
 
 \item{family1, family2, family3}{The family object, communicating the types of
 models to be used for response (\code{form1}) and unmeasured confounder (\verb{form2, form3}) models. See \code{\link[stats:family]{stats::family()}} for details}
@@ -102,7 +102,7 @@ turned off with \code{options("unm_print_call" = FALSE)}}
 \code{file} containing the filename of the jags code.
 }
 \description{
-\code{\link[=unm_glm]{unm_glm()}} fits a multi-staged Bayesian regression model that accounts for
+\code{\link[=unm_glm]{unm_glm()}} fits a multilevel Bayesian regression model that accounts for
 unmeasured confounders. Users can input model information into \code{\link[=unm_glm]{unm_glm()}} in
 a similar manner as they would for the standard \code{\link[stats:glm]{stats::glm()}} function,
 providing arguments like \code{formula}, \code{family}, and \code{data}. Results are stored
@@ -110,15 +110,15 @@ as MCMC iterations.
 }
 \examples{
 
-# ~~ One Unmeasured Confounder Examples (II-Stage Model) ~~
+# ~~ One Unmeasured Confounder Examples (II-Level Model) ~~
 
 
 # normal response, normal confounder model with internally validated data
 (df <- runm(20, response = "norm"))
 
 (unm_mod <- unm_glm(
-  y ~ x + z1 + z2 + z3 + u1,  family1 = gaussian(),
-  u1 ~ x + z1 + z2 + z3,      family2 = gaussian(),
+  form1 = y ~ x + z1 + z2 + z3 + u1,  family1 = gaussian(),
+  form2 = u1 ~ x + z1 + z2 + z3,      family2 = gaussian(),
   data = df
 ))
 
@@ -398,7 +398,7 @@ df$biom <- df$x
 ))
 jags_code(unm_mod)
 
-# ~~ Two Unmeasured Confounders Examples (III-Stage Model) ~~
+# ~~ Two Unmeasured Confounders Examples (III-Level Model) ~~
 # a normal-normal-normal model - internal validation
 (df <- runm(
   50,
@@ -427,7 +427,7 @@ glm(y ~ x + z, data = df)
 coef(unm_mod)
 
 unm_glm(
-  ~ x + z + u1 + u2, family1 = gaussian(),
+  y ~ x + z + u1 + u2, family1 = gaussian(),
   u1 ~ x + z + u2,   family2 = gaussian(),
   u2 ~ x + z,        family3 = gaussian(),
   data = df,

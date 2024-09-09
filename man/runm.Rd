@@ -9,7 +9,7 @@ runm(
   type = "int",
   missing_prop = 0.8,
   response = "bin",
-  response_param = NULL,
+  response_param,
   response_model_coefs = c(int = -1, z1 = 0.5, z2 = 0.5, z3 = 0.5, u1 = 0.5, x = 0.5),
   treatment_model_coefs = c(int = -1, z1 = 0.5, z2 = 0.5, z3 = 0.5, u1 = 0.5),
   covariate_fam_list = list("norm", "bin", "norm"),
