@@ -446,12 +446,12 @@ unm_glm <- function(
   u1 <- if (inherits(form2, "formula")) deparse(form2[[2]]) else NULL # e.g. "u1", character name of confounding var
   u2 <- if (inherits(form3, "formula")) deparse(form3[[2]]) else NULL # e.g. "u2", character name of confounding var
 
-  if (!(is.null(u1) || is.null(u2)) &&
-      grepl(paste(g("\\b{u1}\\b"), g("\\b{u2}\\b"), sep = "|"), deparse(form1[[3]]))) {
+  if (!is.null(u1) && grepl(g("\\b{u1}\\b"), deparse(form1[[3]]))) {
     conf_piece <- "+ inprod(U[i,], lambda)"
   } else {
     conf_piece <- ""
   }
+
 
   response_model_code <- switch(
     family1$family,
@@ -495,7 +495,7 @@ unm_glm <- function(
   }
 
   if (!is.null(u2) && grepl(paste(g("\\b{u2}\\b")), deparse(form2[[3]]))) {
-    conf2_piece <- "+ inprod(U[i, 2], zeta)"
+    conf2_piece <- "+ inprod(U[i,2], zeta)"
   } else {
     conf2_piece <- ""
   }
@@ -736,7 +736,7 @@ unm_glm <- function(
   # compile chain and adapt
   jm <- jags.model(filename, data = jd,
                    n.adapt = n.adapt, n.chains = n.chains,
-                   quiet = quiet# ...
+                   quiet = quiet, ...
   )
 
   params_of_interest <- unique(sub("\\[.+\\]", "", real_coefs))
